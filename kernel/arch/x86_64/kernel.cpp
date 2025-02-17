@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <limine.h>
 #include <jnix.h>
+#include <stdlib.h>
 
 // The Limine requests can be placed anywhere, but it is important that
 // the compiler does not optimise them away, so, usually, they should
@@ -31,6 +32,14 @@ namespace {
 	static volatile LIMINE_BASE_REVISION(3);
 }
 
+namespace {
+	__attribute__((used, section(".limine_requests")))
+	static volatile struct limine_boot_time_request boot_time_req = {
+		.id = LIMINE_BOOT_TIME_REQUEST,
+		.revision = 0
+	};
+}
+
 
 // The following will be our kernel's entry point.
 extern "C" void _start(void) {
@@ -46,8 +55,22 @@ extern "C" void _start(void) {
 	init_framebuf();
 	printk("Booting jnix....\n\n");
 	logk("Initialized framebuffer\n", KERNEL);
-	logk("Loaded idt\n", KERNEL);
-	init_idt();
+	if (boot_time_req.response == nullptr) {
+		logk("Could not get boot time from Limine/RTC", ERROR);
+		halt();
+	}
+
+	int64_t boottime = boot_time_req.response->boot_time;
+	logk("Boot time: ", KERNEL);
+	logk(itoa((int)boottime), NONE);
+	logk("\n", NONE);
+	Interrupts::init();
+	logk("Interrupt initialization complete\n", KERNEL);
+
+	//int i = 1 / 0;
+	//logk(itoa(i), NONE);
+
+	//logk("Divided by 0\n", USER);
 
     	halt();
 }

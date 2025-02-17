@@ -2,41 +2,53 @@
 #include <stdint.h>
 #include <string.h>
 
-struct idt_entry {
+typedef struct idt_entry {
 	uint16_t base_lo;
-	uint16_t sel;
-	uint8_t zero;
-	uint8_t flags;
-	uint16_t base_hi;
-}__attribute__((packed));
+	uint16_t kernel_cs; //GDT segment that gets loaded into the gs reg before calling isr
+	uint8_t ist;
+	uint8_t attributes;
+	uint16_t base_mid;
+	uint32_t base_hi;
+	uint32_t reserved;
+	
+}__attribute__((packed)) idt_entry;
 
-struct idt_ptr {
+typedef struct idtr {
 	uint16_t limit;
-	void* base;
-}__attribute__((packed));
+	uint64_t base;
+}__attribute__((packed)) idtr;
 
 //Our IDT
-struct idt_entry idt[256];
-struct idt_ptr idtptr;
+__attribute__((aligned(0x10)))
+static idt_entry idt[256];
+static idtr idtptr;
 
-void load_idt(idt_ptr* idt) {
-	__asm volatile("lidt (%0)" : : "r" (idt) : "memory");
+extern "C" void load_idt();
+
+namespace Interrupts {
+	void idt_set_gate(uint8_t idx, void* base, uint8_t flags) {
+		//idt_entry* entry = &idt[idx];
+		idt[idx].base_lo = (uint64_t)base & 0xFFFF;
+		// TODO: change this to the 64-bit kernel code entry in the GDT when you change that
+		idt[idx].kernel_cs = 40;
+		idt[idx].ist = 0;
+		idt[idx].attributes = flags;
+		idt[idx].base_mid = ((uint64_t)base >> 16) & 0xFFFF;
+		idt[idx].base_hi = ((uint64_t)base >> 32) & 0xFFFFFFFF;
+		idt[idx].reserved = 0;
+	}
+
+	void clear_idt() {
+		memset(&idt, 0, sizeof(idt_entry) * 256);
+	}
+	
+	void init_idt() {
+		idtptr.base = (uint64_t)&idt[0];
+		idtptr.limit = (uint16_t)(sizeof(idt_entry) * 256) - 1;
+	}
+	void load_idt() {
+		asm volatile ("lidt %0" : : "m"(idtptr));
+	}
+
+	
 }
-
-void idt_set_gate(uint8_t idx, uint64_t base, uint8_t selector, uint8_t flags) {
-	idt_entry entry;
-	entry.base_lo = (base & 0xFFFF);
-	entry.sel = selector;
-	entry.zero = 0;
-	entry.flags = flags;
-	entry.base_hi = ((base >> 16) & 0xFFFF);
-	idt[idx] = entry;
-}
-
-void init_idt() {
-	idtptr.limit = (sizeof(idt_entry) * 265) - 1;
-	idtptr.base = &idt;
-	memset(&idt, 0, sizeof(idt_entry) * 256);
-	load_idt(&idtptr);
-}
-

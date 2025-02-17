@@ -6,7 +6,7 @@ all-hdd: jnix.hdd
 
 .PHONY: run
 run: jnix.iso
-	qemu-system-x86_64 -M q35 -m 2G -cdrom jnix.iso -boot d
+	qemu-system-x86_64 -s -S -monitor stdio -no-shutdown -d int -no-reboot -M q35 -m 2G -cdrom jnix.iso -boot d
 
 .PHONY: run-uefi
 run-uefi: ovmf-x64 jnix.iso
@@ -31,12 +31,15 @@ limine:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v8.x-binary --depth=1
 	make -C limine
 
-deps: libc/libk.a flanterm 
+deps: libc/libk.a flanterm libc/libc.a
 	git clone https://github.com/osdev0/freestnd-c-hdrs.git kernel/freestanding-c || true
 	git clone https://github.com/osdev0/freestnd-cxx-hdrs.git kernel/freestanding-cxx || true
 	wget https://raw.githubusercontent.com/limine-bootloader/limine/refs/heads/v8.x-binary/limine.h -O include/
 
 libc/libk.a:
+	$(MAKE) -C libc
+
+libc/libc.a:
 	$(MAKE) -C libc
 
 .PHONY: kernel

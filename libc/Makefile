@@ -30,6 +30,8 @@ LIBK_CPFLAGS:=$(LIBK_CPPFLAGS) $(KERNEL_ARCH_CPPFLAGS)
 FREEOBJS:=\
 $(ARCH_FREEOBJS) \
 stdlib/abort.o \
+stdlib/system.o \
+stdlib/itoa.o \
 string/memcmp.o \
 string/memcpy.o \
 string/memmove.o \

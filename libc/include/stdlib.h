@@ -11,6 +11,7 @@ extern "C" {
 __attribute__((__noreturn__))
 void abort(void);
 void* malloc(size_t size);
+char* itoa(int value);
  
 #ifdef __cplusplus
 }
