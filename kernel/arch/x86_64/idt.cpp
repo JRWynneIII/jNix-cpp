@@ -30,7 +30,7 @@ namespace Interrupts {
 		//idt_entry* entry = &idt[idx];
 		idt[idx].base_lo = (uint64_t)base & 0xFFFF;
 		// TODO: change this to the 64-bit kernel code entry in the GDT when you change that
-		idt[idx].kernel_cs = 40;
+		idt[idx].kernel_cs = 8;
 		idt[idx].ist = 0;
 		idt[idx].attributes = flags;
 		idt[idx].base_mid = ((uint64_t)base >> 16) & 0xFFFF;

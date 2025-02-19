@@ -64,13 +64,16 @@ extern "C" void _start(void) {
 	logk("Boot time: ", KERNEL);
 	logk(itoa((int)boottime), NONE);
 	logk("\n", NONE);
+	logk("Loading new GDT", KERNEL);
+	GDT::init();
+	logk("....DONE\n", NONE);
 	Interrupts::init();
 	logk("Interrupt initialization complete\n", KERNEL);
 
-	//int i = 1 / 0;
-	//logk(itoa(i), NONE);
+	int i = 1 / 0;
+	logk(itoa(i), NONE);
 
-	//logk("Divided by 0\n", USER);
+	logk("Divided by 0\n", USER);
 
     	halt();
 }
