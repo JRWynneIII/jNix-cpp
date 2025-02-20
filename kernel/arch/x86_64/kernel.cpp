@@ -69,11 +69,8 @@ extern "C" void _start(void) {
 	logk("....DONE\n", NONE);
 	Interrupts::init();
 	logk("Interrupt initialization complete\n", KERNEL);
+	Interrupts::test();
 
-	int i = 1 / 0;
-	logk(itoa(i), NONE);
-
-	logk("Divided by 0\n", USER);
 
     	halt();
 }

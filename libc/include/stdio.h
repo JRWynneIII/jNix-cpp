@@ -1,19 +1,4 @@
-#ifndef _STDIO_H
-#define _STDIO_H 1
- 
-#include <sys/cdefs.h>
- 
-#ifdef __cplusplus
-extern "C" {
-#endif
- 
-int printf(const char* __restrict, ...);
-int putchar(int);
-int puts(const char*);
-void gets(char*);
- 
-#ifdef __cplusplus
-}
-#endif
- 
-#endif
+#pragma once
+#include<stdint.h>
+
+char* hex_to_str(unsigned long input);

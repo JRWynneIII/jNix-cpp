@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <jnix.h>
 #include "port.h"
+#include "panic.h"
 
 #define PIC_READ_IRR 0x0a	//Raised IRQ
 #define PIC_READ_ISR 0x0b
@@ -51,63 +52,44 @@ extern "C" void isr29();
 extern "C" void isr30();
 extern "C" void isr31();
 
-//TODO: Change this for x86_64
-//struct registers 
-//{
-//    //unsigned int gs, fs, es, ds;      
-//    unsigned int rdi, rsi, rdx, rcx, rax, r8, r9, r10, r11;
-//    unsigned int int_no, err_code;    
-//    unsigned int eip, cs, eflags, useresp, ss, rsp;
-//};
-struct registers {
-	uintptr_t r15, r14, r13, r12;
-	uintptr_t r11, r10, r9, r8;
-	uintptr_t rbp, rdi, rsi, rdx, rcx, rbx, rax;
-
-	/* Pushed by wrapper */
-	uintptr_t int_no, err_code;
-
-	/* Pushed by interrupt */
-	uintptr_t rip, cs, rflags, rsp, ss;
+extern char* exception_messages[] =
+{
+	"Division By Zero",
+	"Debug Exception",
+ 	"Non Maskable Interrupt Exception",
+	"Breakpoint Exception",
+	"Into Detected Overflow Exception",
+	"Out of Bounds Exception",
+	"Invalid Opcode Exception",
+	"No Coprocessor Exception",
+	"Double Fault",
+	"Coprocessor Segment Overrun",
+	"Bad TSS"
+	"Segment not Present",
+	"Stack Fault",
+	"General Protection Fault",
+	"Page Fault",
+	"Unknown Interrupt Exception",
+	"Coprocessor Fault",
+	"Alignment Check Exception",
+	"Machine Check Exception",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved"
 };
 
-namespace Interrupts {
 
-	const char *exception_messages[] =
-	{
-		"Division By Zero",
-		"Debug Exception",
-	 	"Non Maskable Interrupt Exception",
-		"Breakpoint Exception",
-		"Into Detected Overflow Exception",
-		"Out of Bounds Exception",
-		"Invalid Opcode Exception",
-		"No Coprocessor Exception",
-		"Double Fault",
-		"Coprocessor Segment Overrun",
-		"Bad TSS"
-		"Segment not Present",
-		"Stack Fault",
-		"General Protection Fault",
-		"Page Fault",
-		"Unknown Interrupt Exception",
-		"Coprocessor Fault",
-		"Alignment Check Exception",
-		"Machine Check Exception",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved"
-	};
+namespace Interrupts {
 	void* irq_handlers[16] = {
 		0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0
@@ -236,9 +218,10 @@ namespace Interrupts {
 	extern "C" void fault_handler(struct registers *r) {
 		if (r->int_no < 32) {
 			// Print the exception msg
-			logk("\n\n\n", NONE);
-			logk(exception_messages[r->int_no], ERROR);
-			for(;;);
+			kpanic(r);
+		//	logk("\n\n\n", NONE);
+		//	logk(exception_messages[r->int_no], ERROR);
+		//	for(;;);
 		}
 	}
 

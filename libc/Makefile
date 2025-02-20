@@ -13,8 +13,8 @@ EXEC_PREFIX?=$(PREFIX)
 INCLUDEDIR?=$(PREFIX)/include
 LIBDIR?=$(EXEC_PREFIX)/lib
  
-CFLAGS:=$(CFLAGS) -ffreestanding -fno-builtin -Wall -Wextra
-CPPFLAGS:=$(CPPFLAGS) -D__is_jnix_libc -Iinclude -I../sysroot/usr/include
+CFLAGS:=$(CFLAGS) -ffreestanding -fno-builtin -Wall -Wextra -g
+CPPFLAGS:=$(CPPFLAGS) -g -D__is_jnix_libc -Iinclude -I../sysroot/usr/include
 LIBK_CFLAGS:=-Wall -Wextra -ffreestanding -fno-builtin
 LIBK_CPPFLAGS:=$(CPPFLAGS) -D__is_jnix_kernel -I../sysroot/usr/include
  
@@ -32,6 +32,7 @@ $(ARCH_FREEOBJS) \
 stdlib/abort.o \
 stdlib/system.o \
 stdlib/itoa.o \
+stdio/printf.o \
 string/memcmp.o \
 string/memcpy.o \
 string/memmove.o \
@@ -63,10 +64,10 @@ libk.a: $(LIBK_OBJS)
 	$(AR) rcs $@ $(LIBK_OBJS)
  
 %.o: %.c
-	$(CC) -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
+	$(CC) -g -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
  
 %.o: %.S
-	$(CC) -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+	$(CC) -g  -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
  
 %.libk.o: %.c
 	$(CC) -c $< -o $@ -std=gnu11 $(LIBK_CFLAGS) $(LIBK_CPPFLAGS)

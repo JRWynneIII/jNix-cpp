@@ -61,34 +61,44 @@ void init_framebuf() {
 }
 
 void logk(char* msg, enum LOGLEVEL level) {
-	switch(level) {
-		case LOGLEVEL::KERNEL:
-			printk("[KERNEL] ");
-			printk(msg);
-			break;
-		case LOGLEVEL::USER:
-			printk("[USER] ");
-			printk(msg);
-			break;
-		case LOGLEVEL::INFO:
-			printk("[INFO] ");
-			printk(msg);
-			break;
-		case LOGLEVEL::ERROR:
-			printk("[ERROR] ");
-			printk(msg);
-			break;
-		default:
-			printk(msg);
+	if (msg != nullptr) {
+		switch(level) {
+			case LOGLEVEL::KERNEL:
+				printk("[KERNEL] ");
+				printk(msg);
+				break;
+			case LOGLEVEL::USER:
+				printk("[USER] ");
+				printk(msg);
+				break;
+			case LOGLEVEL::INFO:
+				printk("[INFO] ");
+				printk(msg);
+				break;
+			case LOGLEVEL::ERROR:
+				printk("[ERROR] ");
+				printk(msg);
+				break;
+			case LOGLEVEL::PANIC:
+				printk("[PANIC] ");
+				printk(msg);
+				break;
+			default:
+				printk(msg);
+		}
+	} else {
+		printk("Error in logk: msg is null!");
 	}
+
 }
 
 void printk(char* msg) {
-	//for (std::size_t i = 0; i < 100; i++) {
-	//	volatile std::uint32_t *fb_ptr = static_cast<volatile std::uint32_t *>(framebuffer->address);
-	//	fb_ptr[i * (framebuffer->pitch / 4) + i] = 0xffffff;
-	//}
-	flanterm_write(ft_ctx, msg, strlen(msg));
+	if (msg != nullptr) {
+		flanterm_write(ft_ctx, msg, strlen(msg));
+	} else {
+		char* m = "Error in printk: msg is null!";
+		flanterm_write(ft_ctx, m, strlen(m));
+	}
 
 	return;
 }

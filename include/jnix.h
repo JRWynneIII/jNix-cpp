@@ -1,5 +1,4 @@
-#ifndef JNIX_H
-#define JNIX_H
+#pragma once
 #include<stdint.h>
 
 void init_idt();
@@ -10,6 +9,7 @@ enum LOGLEVEL {
 	USER,
 	INFO,
 	ERROR,
+	PANIC,
 	NONE
 };
 
@@ -25,10 +25,9 @@ namespace Interrupts {
 	void load_idt();
 	void idt_set_gate(uint8_t idx, void* base, uint8_t flags);
 	void clear_idt();
+	void test();
 }
 
 namespace GDT {
 	void init();
 }
-
-#endif

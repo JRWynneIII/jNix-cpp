@@ -6,6 +6,10 @@ all-hdd: jnix.hdd
 
 .PHONY: run
 run: jnix.iso
+	qemu-system-x86_64 -no-shutdown -no-reboot -M q35 -m 2G -cdrom jnix.iso -boot d
+
+.PHONY: debug
+debug: jnix.iso
 	qemu-system-x86_64 -s -S -monitor stdio -no-shutdown -d int -no-reboot -M q35 -m 2G -cdrom jnix.iso -boot d
 
 .PHONY: run-uefi

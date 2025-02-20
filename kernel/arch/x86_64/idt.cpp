@@ -1,6 +1,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
+#include <jnix.h>
 
 typedef struct idt_entry {
 	uint16_t base_lo;
@@ -46,9 +48,15 @@ namespace Interrupts {
 		idtptr.base = (uint64_t)&idt[0];
 		idtptr.limit = (uint16_t)(sizeof(idt_entry) * 256) - 1;
 	}
+
 	void load_idt() {
 		asm volatile ("lidt %0" : : "m"(idtptr));
 	}
 
-	
+	void test() {
+		int i = 1 / 0;
+		logk(itoa(i), NONE);
+
+		logk("Divided by 0\n", USER);
+	}
 }
