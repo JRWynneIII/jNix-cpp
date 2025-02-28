@@ -64,7 +64,7 @@ extern char* exception_messages[] =
 	"No Coprocessor Exception",
 	"Double Fault",
 	"Coprocessor Segment Overrun",
-	"Bad TSS"
+	"Bad TSS",
 	"Segment not Present",
 	"Stack Fault",
 	"General Protection Fault",
@@ -217,11 +217,9 @@ namespace Interrupts {
 
 	extern "C" void fault_handler(struct registers *r) {
 		if (r->int_no < 32) {
-			// Print the exception msg
+			// Since we're just in kernel-land 100% of the time now, lets just kernel panic
 			kpanic(r);
-		//	logk("\n\n\n", NONE);
-		//	logk(exception_messages[r->int_no], ERROR);
-		//	for(;;);
+			// TODO: Modify this to account for user-space faults; kill process if faulted, basically
 		}
 	}
 

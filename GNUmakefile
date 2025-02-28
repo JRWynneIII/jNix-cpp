@@ -35,22 +35,24 @@ limine:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v8.x-binary --depth=1
 	make -C limine
 
-deps: libc/libk.a flanterm libc/libc.a
+#deps: libc/libk.a flanterm libc/libc.a
+deps: flanterm
 	git clone https://github.com/osdev0/freestnd-c-hdrs.git kernel/freestanding-c || true
 	git clone https://github.com/osdev0/freestnd-cxx-hdrs.git kernel/freestanding-cxx || true
 	wget https://raw.githubusercontent.com/limine-bootloader/limine/refs/heads/v8.x-binary/limine.h -O include/
 
-libc/libk.a:
-	$(MAKE) -C libc
-
-libc/libc.a:
-	$(MAKE) -C libc
+#libc/libk.a:
+#	$(MAKE) -C libc
+#
+#libc/libc.a:
+#	$(MAKE) -C libc
 
 .PHONY: kernel
 kernel: deps
 	$(MAKE) -C kernel
 
-jnix.iso: deps limine libc/libk.a kernel
+#jnix.iso: deps limine libc/libk.a kernel
+jnix.iso: deps limine kernel
 	rm -rf iso_root
 	mkdir -p iso_root/boot
 	cp -v kernel/arch/x86_64//kernel.elf iso_root/boot/
@@ -96,7 +98,6 @@ jnix.iso: deps limine libc/libk.a kernel
 clean:
 	rm -rf iso_root jnix.iso jnix.hdd
 	$(MAKE) -C kernel clean
-	$(MAKE) -C libc clean
 
 .PHONY: distclean
 distclean: clean

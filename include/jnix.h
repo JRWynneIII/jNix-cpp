@@ -28,6 +28,23 @@ namespace Interrupts {
 	void test();
 }
 
+typedef struct mem_region;
+
+struct mem_region {
+	uint64_t idx;
+	uintptr_t base;
+	uintptr_t length;
+	mem_region* next;
+}; 
+
+namespace Memory {
+	void log_memory_info();
+	void init_memmap();
+	extern uint64_t virt_addr_offset;
+	extern uint64_t hhdm_offset;
+	extern mem_region usable_memory_regions[7];
+}
+
 namespace GDT {
 	void init();
 }

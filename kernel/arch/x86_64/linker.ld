@@ -65,6 +65,7 @@ SECTIONS
     .bss : {
         *(COMMON)
         *(.bss .bss.*)
+	endkernel = .;
     } :data
 
     /* Discard .note.* and .eh_frame since they may cause issues on some hosts. */

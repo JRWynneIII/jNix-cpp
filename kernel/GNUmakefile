@@ -23,7 +23,7 @@ $(eval $(call DEFAULT_VAR,CXX,x86_64-elf-g++))
 $(eval $(call DEFAULT_VAR,LD,x86_64-elf-ld))
 
 # User controllable CFLAGS.
-CFLAGS ?= -g -O0 -pipe -Wall -Wextra -fpermissive -Wwrite-strings
+CFLAGS ?= -g -O0 -pipe -Wall -Wextra -fpermissive -Wwrite-strings -fno-threadsafe-statics -w
 
 # User controllable preprocessor flags. We set none by default.
 CPPFLAGS ?=
@@ -55,12 +55,9 @@ override CFLAGS +=       \
     -MMD                 \
     -I. \
     -I ../include \
-    -I ../libc/include \
+    -I ./libc/include \
     -I ./freestanding-c/x86_64/include \
     -I ./freestanding-cxx/x86_64/include \
-    -lk \
-    -lc \
-    -L ../libc 
 
 
 # Internal linker flags that should not be changed by the user.
@@ -69,9 +66,6 @@ override LDFLAGS +=         \
     -static                 \
     -m elf_x86_64           \
     -z max-page-size=0x1000 \
-    -L ../libc \
-    -lk \
-    -lc \
     -T arch/x86_64/linker.ld 
 
 # Check if the linker supports -no-pie and enable it if it does
