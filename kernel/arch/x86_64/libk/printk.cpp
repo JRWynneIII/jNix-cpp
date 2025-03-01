@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <limine.h>
 #include <string.h>
-#include <jnix.h>
+#include <kernel.h>
 #include <flanterm/flanterm.h>
 #include <flanterm/backends/fb.h>
 
@@ -24,12 +24,6 @@ namespace {
 
 
 namespace FrameBuffer {
-	static void halt(void) {
-		for (;;) {
-		    asm("hlt");
-		}
-	}
-	
 	struct limine_framebuffer* framebuffer = nullptr;
 	struct flanterm_context* ft_ctx  = nullptr;
 	

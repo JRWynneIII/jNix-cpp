@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <jnix.h>
+#include <kernel.h>
 
 typedef struct idt_entry {
 	uint16_t base_lo;

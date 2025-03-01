@@ -1,7 +1,7 @@
 #include<cstdint>
 #include<cstddef>
 #include<stdlib.h>
-#include<jnix.h>
+#include<kernel.h>
 #include<panic.h>
 #include<string.h>
 #include<stdio.h>

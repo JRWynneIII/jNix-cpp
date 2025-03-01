@@ -1,17 +1,13 @@
-#include <cstdint>
-#include <cstddef>
-#include <stdint.h>
-#include <stddef.h>
-#include <limine.h>
-#include <stdlib.h>
-#include <jnix.h>
-#include <memory.h>
-
-static void halt(void) {
-    for (;;) {
-        asm("hlt");
-    }
-}
+#include<cstdint>
+#include<cstddef>
+#include<stdint.h>
+#include<stddef.h>
+#include<limine.h>
+#include<stdlib.h>
+#include<kernel.h>
+#include<memory.h>
+#include<gdt.h>
+#include<interrupts.h>
 
 // DO NOT REMOVE
 extern "C" {

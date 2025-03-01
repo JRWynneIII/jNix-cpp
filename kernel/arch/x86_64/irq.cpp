@@ -1,10 +1,11 @@
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <jnix.h>
-#include "port.h"
-#include "panic.h"
+#include<stdbool.h>
+#include<stddef.h>
+#include<stdint.h>
+#include<stdlib.h>
+#include<kernel.h>
+#include<port.h>
+#include<panic.h>
+#include<interrupts.h>
 
 #define PIC_READ_IRR 0x0a	//Raised IRQ
 #define PIC_READ_ISR 0x0b

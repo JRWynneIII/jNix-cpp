@@ -2,7 +2,7 @@
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
-#include<jnix.h>
+#include<kernel.h>
 #include<memory.h>
 
 namespace Memory {

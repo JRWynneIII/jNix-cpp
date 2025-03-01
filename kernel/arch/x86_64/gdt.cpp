@@ -1,4 +1,4 @@
-#include <jnix.h>
+#include <kernel.h>
 
 #define NUM_GDT_ENTRIES 6
 
