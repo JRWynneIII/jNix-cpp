@@ -23,43 +23,49 @@ namespace {
 }
 
 
-static void halt(void) {
-	for (;;) {
-	    asm("hlt");
-	}
-}
-
-struct limine_framebuffer* framebuffer = nullptr;
-struct flanterm_context* ft_ctx  = nullptr;
-
-void init_framebuf() {
-	if (framebuffer_request.response == nullptr
-		|| framebuffer_request.response->framebuffer_count < 1) {
-		   halt();
+namespace FrameBuffer {
+	static void halt(void) {
+		for (;;) {
+		    asm("hlt");
+		}
 	}
 	
-	framebuffer = framebuffer_request.response->framebuffers[0];
-
-
+	struct limine_framebuffer* framebuffer = nullptr;
+	struct flanterm_context* ft_ctx  = nullptr;
 	
-	ft_ctx = flanterm_fb_init(
-		NULL,
-		NULL,
-		(uint32_t*)framebuffer->address, framebuffer->width, framebuffer->height, framebuffer->pitch,
-		framebuffer->red_mask_size, framebuffer->red_mask_shift,
-		framebuffer->green_mask_size, framebuffer->green_mask_shift,
-		framebuffer->blue_mask_size, framebuffer->blue_mask_shift,
-		NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, NULL,
-		NULL, 0, 0, 1,
-		0, 0,
-		0
-	);
+	void init() {
+		if (framebuffer_request.response == nullptr
+			|| framebuffer_request.response->framebuffer_count < 1) {
+			   halt();
+		}
+		
+		framebuffer = framebuffer_request.response->framebuffers[0];
+	
+	
+		
+		ft_ctx = flanterm_fb_init(
+			NULL,
+			NULL,
+			(uint32_t*)framebuffer->address, framebuffer->width, framebuffer->height, framebuffer->pitch,
+			framebuffer->red_mask_size, framebuffer->red_mask_shift,
+			framebuffer->green_mask_size, framebuffer->green_mask_shift,
+			framebuffer->blue_mask_size, framebuffer->blue_mask_shift,
+			NULL,
+			NULL, NULL,
+			NULL, NULL,
+			NULL, NULL,
+			NULL, 0, 0, 1,
+			0, 0,
+			0
+		);
+	
+	}
 
+	void write(char* msg, uint64_t length) {
+		flanterm_write(ft_ctx, msg, length);
+	}
 }
-
+	
 void logk(char* msg, enum LOGLEVEL level) {
 	if (msg != nullptr) {
 		switch(level) {
@@ -94,11 +100,10 @@ void logk(char* msg, enum LOGLEVEL level) {
 
 void printk(char* msg) {
 	if (msg != nullptr) {
-		flanterm_write(ft_ctx, msg, strlen(msg));
+		FrameBuffer::write(msg, strlen(msg));
 	} else {
 		char* m = "Error in printk: msg is null!";
-		flanterm_write(ft_ctx, m, strlen(m));
+		FrameBuffer::write(m, strlen(m));
 	}
-
 	return;
 }

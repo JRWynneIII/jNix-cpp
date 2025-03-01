@@ -93,6 +93,7 @@ namespace Memory {
 		}
 
 		void test() {
+			logk("Running paging and allocation tests\n", KERNEL);
 			logk("Testing allocation of 40 bytes ", KERNEL);
 			uint64_t* t1 = kalloc(sizeof(uint64_t), 5);
 			printk(hex_to_str(t1));
@@ -203,6 +204,7 @@ namespace Memory {
 			kfree(t5);
 			logk("Free'd t5\n", KERNEL);
 			dump_slab_list();
+			logk("Memory management testing complete\n", KERNEL);
 		}
 	}
 }

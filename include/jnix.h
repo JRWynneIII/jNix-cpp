@@ -14,7 +14,11 @@ enum LOGLEVEL {
 };
 
 void logk(char* msg, enum LOGLEVEL level);
-void init_framebuf();
+
+namespace FrameBuffer {
+	void init();
+}
+
 void init_term();
 unsigned char inportb (unsigned short _port);
 void outportb (unsigned short _port, unsigned char _data);

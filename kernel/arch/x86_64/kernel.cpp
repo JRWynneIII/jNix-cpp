@@ -49,7 +49,7 @@ extern "C" void _start(void) {
 	    __init_array[i]();
 	}
 
-	init_framebuf();
+	FrameBuffer::init();
 	printk("Booting jnix....\n\n");
 	logk("Initialized framebuffer\n", KERNEL);
 	if (boot_time_req.response == nullptr) {
@@ -61,19 +61,22 @@ extern "C" void _start(void) {
 	logk("Boot time: ", KERNEL);
 	logk(itoa((int)boottime), NONE);
 	logk("\n", NONE);
-	logk("Loading new GDT", KERNEL);
+
+	logk("Loading new GDT\n", KERNEL);
 	GDT::init();
-	logk("....DONE\n", NONE);
+	logk("GDT initialization complete\n", KERNEL);
+
 	Interrupts::init();
 	logk("Interrupt initialization complete\n", KERNEL);
 
-	logk("Gathering memory info\n", KERNEL);
+	logk("Gathering memory map\n", KERNEL);
 	Memory::init_memmap();
 	//Memory::log_memory_info();
-	logk("Initializing paging\n", KERNEL);
+	logk("Initializing paging and memory management\n", KERNEL);
 	//Interrupts::test();
 	Memory::Paging::init();
 	Memory::Paging::test();
+	logk("Paging and memory management intialization complete\n", KERNEL);
 
 
     	halt();

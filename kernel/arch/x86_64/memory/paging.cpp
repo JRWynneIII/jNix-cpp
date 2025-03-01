@@ -42,9 +42,6 @@ namespace Memory {
 		pml4_entry_t* find_or_create_pml4_entry(pml4_entry_t* address, uint64_t offset) {
 			pml4_entry_t* entry = (pml4_entry_t*)(address + offset);
 			if (!entry->present) {
-				//If entry is marked not present, then we're missing a PDP for that address
-				//TODO: This is broken on all find_or_create_*_entry's. If next level isn't present,
-				//	we can't create a new one b/c we don't know where the end of the pdps are
 				uintptr_t pdp_addr = alloc_dir_entry();
 				// Set to all 0's
 				memset(TO_VIRT_ADDR(pdp_addr), 0, sizeof(pdp_entry_t));
@@ -258,6 +255,7 @@ namespace Memory {
 			return nullptr;
 		}
 
+		// TODO: Maybe this should be run on a timer or via a page fault interrupt?
 		void coallesce_all_free_slabs() {
 			slab_t* cur = slab_head;
 			while (cur->next != nullptr) {

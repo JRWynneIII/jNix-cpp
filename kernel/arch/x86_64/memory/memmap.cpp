@@ -110,7 +110,7 @@ namespace Memory {
 
 		if (hhdm.response != nullptr) {
 			hhdm_offset = hhdm.response->offset;
-			logk("Higher Half Direct Map Offset : ", KERNEL);
+			logk("Kernel virtual memory offset : ", KERNEL);
 			printk(hex_to_str(hhdm.response->offset));
 			printk("\n");
 		} else {
