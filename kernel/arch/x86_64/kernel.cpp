@@ -3,12 +3,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <limine.h>
-#include <jnix.h>
 #include <stdlib.h>
-
-// The Limine requests can be placed anywhere, but it is important that
-// the compiler does not optimise them away, so, usually, they should
-// be made volatile or equivalent.
+#include <jnix.h>
+#include <memory.h>
 
 static void halt(void) {
     for (;;) {
@@ -47,7 +44,7 @@ extern "C" void _start(void) {
 		halt();
 	}
 
-	// Run out global constructors
+	// Run our global constructors
 	for (std::size_t i = 0; &__init_array[i] != __init_array_end; i++) {
 	    __init_array[i]();
 	}
@@ -72,9 +69,8 @@ extern "C" void _start(void) {
 
 	logk("Gathering memory info\n", KERNEL);
 	Memory::init_memmap();
-	Memory::log_memory_info();
-	logk("Initializing page directory\n", KERNEL);
-	logk("Initializing page table\n", KERNEL);
+	//Memory::log_memory_info();
+	logk("Initializing paging\n", KERNEL);
 	//Interrupts::test();
 	Memory::Paging::init();
 	Memory::Paging::test();
