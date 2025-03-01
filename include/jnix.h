@@ -43,6 +43,10 @@ namespace Memory {
 	extern uint64_t virt_addr_offset;
 	extern uint64_t hhdm_offset;
 	extern mem_region usable_memory_regions[7];
+	namespace Paging {
+		void init();
+		void test();
+	}
 }
 
 namespace GDT {

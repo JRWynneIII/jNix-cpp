@@ -5,7 +5,6 @@
 #include <limine.h>
 #include <jnix.h>
 #include <stdlib.h>
-#include <memory.hpp>
 
 // The Limine requests can be placed anywhere, but it is important that
 // the compiler does not optimise them away, so, usually, they should
@@ -77,9 +76,8 @@ extern "C" void _start(void) {
 	logk("Initializing page directory\n", KERNEL);
 	logk("Initializing page table\n", KERNEL);
 	//Interrupts::test();
-	PageDirectory p = PageDirectory();
-	p.test();
-
+	Memory::Paging::init();
+	Memory::Paging::test();
 
 
     	halt();
