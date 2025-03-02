@@ -30,7 +30,15 @@ namespace Memory {
 
 				slab_to_free->size += old_next->size;
 			}
-			// TODO: Coallesce with previous slab
+			// Coallesce with previous slab is both are free
+			if (slab_to_free != slab_head && slab_to_free->previous->is_free) {
+				slab_t* rhs = slab_to_free->next;
+				slab_t* lhs = slab_to_free->previous;
+				
+				rhs->previous = lhs;
+				lhs->next = rhs;
+				lhs->size += slab_to_free->size;
+			}
 			// TODO: invalidate page?
 			// 	do we really need to do that when we are tracking free slabs?
 		}
