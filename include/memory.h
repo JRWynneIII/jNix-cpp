@@ -105,6 +105,7 @@ struct frame_t {
 typedef struct slab_t;
 struct slab_t {
 	slab_t* next;
+	slab_t* previous;
 	uint64_t size; //bytes
 	bool is_free;
 };

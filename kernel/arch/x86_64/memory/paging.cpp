@@ -8,22 +8,29 @@
 namespace Memory {
 	namespace Paging {
 		pml4_dir_t* pml4_dir;
-
 		slab_t* slab_head;
-
 		slab_t* get_slab_head() { return slab_head; }
+		//TODO: Add page fault handler, on page fault, repair slab table
+		
+		//Attempts to walk the table, and ensures that sizes match slabs. If sizes don't match, then we can
+		//assume that there was a buffer overrun that broke something
+		uint64_t repair_slab_table() {
+			slab_t* cur = slab_head;
+		}
 
 		void kfree(void* vaddr) {
 			slab_t* slab_to_free = vaddr - sizeof(slab_t);
 			slab_to_free->is_free = true;
 			// If next slab is free, coallesce with current free slab.
-			// TODO: Maybe change slabs to be doubly linked, circular? list so that you can coallesce with 
-			// the previous slab
-			if (slab_to_free->next != nullptr && slab_to_free->next->is_free) {
+			if (slab_to_free->next != slab_head && slab_to_free->next->is_free) {
 				slab_t* old_next = slab_to_free->next;
+
 				slab_to_free->next = slab_to_free->next->next;
+				slab_to_free->next->previous = slab_to_free;
+
 				slab_to_free->size += old_next->size;
 			}
+			// TODO: Coallesce with previous slab
 			// TODO: invalidate page?
 			// 	do we really need to do that when we are tracking free slabs?
 		}
@@ -166,11 +173,12 @@ namespace Memory {
 		}
 
 		slab_t* find_last_slab() {
-			slab_t* cur = slab_head;
-			while (cur->next != nullptr) {
-				cur = cur->next;
-			}
-			return cur;
+			return slab_head->previous;
+		//	slab_t* cur = slab_head;
+		//	while (cur->next != nullptr) {
+		//		cur = cur->next;
+		//	}
+		//	return cur;
 		}
 
 		slab_t* create_new_pages(uint64_t num_pages) {
@@ -217,13 +225,12 @@ namespace Memory {
 				// Escape the for loop if we've found our pages/slab
 				if (found_contiguous_pages) break;
 
-
 				iter++;
 			}
 
 			// Write a new free slab entry at the beginning of new page range
-			slab_t s = { nullptr, slab_size, true };
 			uintptr_t slab_addr = pages_to_allocate[0].virt_addr;
+			slab_t s = { slab_addr, slab_addr, slab_size, true };
 			// Copy the slab entry to the beginning of the first page
 			memcpy(slab_addr, &s, sizeof(slab_t));
 			if (slab_head != nullptr) {
@@ -231,18 +238,27 @@ namespace Memory {
 				// on the first page
 				slab_t* last_slab = find_last_slab();
 				last_slab->next = (slab_t*)slab_addr;
+				((slab_t*)slab_addr)->previous = last_slab;
+				((slab_t*)slab_addr)->next = slab_head;
+				// Update the circular link so head->prev == new_slab
+				slab_head->previous = slab_addr;
 			}
+
+
+
 
 			return (slab_t*)slab_addr;
 		}
 
 		slab_t* find_free_slab(uint64_t size) {
 			slab_t* cur = slab_head;
-			while (cur->next != nullptr) {
-				if (cur->is_free && cur->size >= size) {
-					break;
+			if (cur->next != slab_head) {
+				while (cur->next != slab_head) {
+					if (cur->is_free && cur->size >= size) {
+						break;
+					}
+					cur = cur->next;
 				}
-				cur = cur->next;
 			}
 			if (cur->size >= size) {
 				// we have to check is_free here b/c edge case of slab->size >= requested size, 
@@ -256,16 +272,16 @@ namespace Memory {
 		}
 
 		// TODO: Maybe this should be run on a timer or via a page fault interrupt?
-		void coallesce_all_free_slabs() {
-			slab_t* cur = slab_head;
-			while (cur->next != nullptr) {
-				if (cur->is_free && cur->next->is_free) {
-					cur->size += cur->next->size;
-					cur->next = cur->next->next;
-				}
-				cur = cur->next;
-			}
-		}
+		//void coallesce_all_free_slabs() {
+		//	slab_t* cur = slab_head;
+		//	while (cur->next != nullptr) {
+		//		if (cur->is_free && cur->next->is_free) {
+		//			cur->size += cur->next->size;
+		//			cur->next = cur->next->next;
+		//		}
+		//		cur = cur->next;
+		//	}
+		//}
 
 		//void coallesce_page_free_slabs(frame_t page) {
 		//	// Start at the beginning of the page
@@ -300,11 +316,15 @@ namespace Memory {
 
 			if (slab->size > numbytes) {
 				// If requested slab is smaller than found slab, then bifurcate the slab
-				slab_t new_slab = {slab->next, slab->size - numbytes, true};
+				slab_t new_slab = {slab->next, slab, slab->size - numbytes, true};
+
 				slab_t* new_slab_addr = slab + slab->size + sizeof(slab_t);
-				memcpy(new_slab_addr, &new_slab, sizeof(slab_t));
+
+				slab->next->previous = new_slab_addr;
 				slab->size = numbytes;
 				slab->next = new_slab_addr;
+
+				memcpy(new_slab_addr, &new_slab, sizeof(slab_t));
 			} else if (slab->size < numbytes) {
 				logk("Cannot allocate larger object in smaller slab!\n", ERROR);
 				printk("Slab size: ");

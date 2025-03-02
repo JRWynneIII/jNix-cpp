@@ -74,6 +74,8 @@ namespace Memory {
 			printk("{ ");
 			printk(hex_to_str(slab->next));
 			printk(", ");
+			printk(hex_to_str(slab->previous));
+			printk(", ");
 			printk(itoa(slab->size));
 			printk(", ");
 			printk(itoa(slab->is_free));
@@ -83,7 +85,7 @@ namespace Memory {
 		void dump_slab_list() {
 			slab_t* cur = get_slab_head();
 			int idx = 0;
-			while (cur != nullptr) {
+			while (cur != get_slab_head() || idx == 0) {
 				printk("Slab #");
 				printk(itoa(idx));
 				log_slab_entry(cur);
