@@ -161,9 +161,9 @@ namespace Interrupts {
 	}
 
 	void init() {
-		logk("Initializing IDT", KERNEL);
+		logfk(KERNEL, "Initializing IDT");
 		init_idt();
-		logk("....DONE\n", NONE);
+		printk("....DONE\n");
 
 		//clear_idt();
 		idt_set_gate(0, isr0, 0x8E);
@@ -203,16 +203,16 @@ namespace Interrupts {
 		idt_set_gate(33, irq1, 0x8E);
 		idt_set_gate(34, irq2, 0x8E);
 
-		logk("Loading IDT", KERNEL);
+		logfk(KERNEL, "Loading IDT");
 		load_idt();
-		logk("....DONE\n", NONE);
+		printk("....DONE\n");
 		//Enable interrupts
-		logk("Enabling interrupts", KERNEL);
+		logfk(KERNEL, "Enabling interrupts");
 		__asm__ __volatile__("sti");
-		logk("....DONE\n", NONE);
-		logk("Initializing PIC", KERNEL);
+		printk("....DONE\n");
+		logfk(KERNEL, "Initializing PIC");
 		init_pic();
-		logk("....DONE\n", NONE);
+		printk("....DONE\n");
 	}
 
 

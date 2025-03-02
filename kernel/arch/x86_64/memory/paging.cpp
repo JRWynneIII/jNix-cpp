@@ -10,8 +10,8 @@ namespace Memory {
 		pml4_dir_t* pml4_dir;
 		slab_t* slab_head;
 		slab_t* get_slab_head() { return slab_head; }
-		//TODO: Add page fault handler, on page fault, repair slab table
 		
+		//TODO: Add page fault handler, on page fault, repair slab table
 		//Attempts to walk the table, and ensures that sizes match slabs. If sizes don't match, then we can
 		//assume that there was a buffer overrun that broke something
 		uint64_t repair_slab_table() {
@@ -279,35 +279,6 @@ namespace Memory {
 			return nullptr;
 		}
 
-		// TODO: Maybe this should be run on a timer or via a page fault interrupt?
-		//void coallesce_all_free_slabs() {
-		//	slab_t* cur = slab_head;
-		//	while (cur->next != nullptr) {
-		//		if (cur->is_free && cur->next->is_free) {
-		//			cur->size += cur->next->size;
-		//			cur->next = cur->next->next;
-		//		}
-		//		cur = cur->next;
-		//	}
-		//}
-
-		//void coallesce_page_free_slabs(frame_t page) {
-		//	// Start at the beginning of the page
-		//	slab_t* cur = (slab_t*) page.virt_addr;
-		//	while (cur->next != nullptr) {
-		//		if (cur->is_free && cur->next->is_free) {
-		//			cur->size += cur->next->size;
-		//			cur->next = cur->next->next;
-		//		}
-		//		cur = cur->next;
-		//		// Check if next slab starts on a different page
-		//		if (cur >= page.virt_addr + PAGE_SIZE_BYTES) {
-		//			break;
-		//		}
-		//	}
-		//}
-
-
 		void* kalloc(uint64_t objsize, uint64_t num) {
 			uint64_t numbytes = objsize * num;
 			slab_t* slab = find_free_slab(numbytes);
@@ -334,13 +305,9 @@ namespace Memory {
 
 				memcpy(new_slab_addr, &new_slab, sizeof(slab_t));
 			} else if (slab->size < numbytes) {
-				logk("Cannot allocate larger object in smaller slab!\n", ERROR);
-				printk("Slab size: ");
-				printk(itoa(slab->size));
-				printk("\nnumbytes: ");
-				printk(itoa(numbytes));
-				printk("\n");
-				for(;;);
+				logfk(ERROR, "Cannot allocate larger object in smaller slab!\n");
+				printfk("Slab size: %d\tnumbytes: %d\n", slab->size, numbytes);
+				halt();
 			} else {
 				slab->size = numbytes;
 			}

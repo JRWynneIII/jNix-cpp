@@ -3,6 +3,9 @@
 #include <limine.h>
 #include <string.h>
 #include <kernel.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <cstdarg>
 #include <flanterm/flanterm.h>
 #include <flanterm/backends/fb.h>
 
@@ -60,28 +63,24 @@ namespace FrameBuffer {
 	}
 }
 	
+
 void logk(char* msg, enum LOGLEVEL level) {
 	if (msg != nullptr) {
 		switch(level) {
 			case LOGLEVEL::KERNEL:
-				printk("[KERNEL] ");
-				printk(msg);
+				printfk("[KERNEL] %s", msg);
 				break;
 			case LOGLEVEL::USER:
-				printk("[USER] ");
-				printk(msg);
+				printfk("[USER] %s", msg);
 				break;
 			case LOGLEVEL::INFO:
-				printk("[INFO] ");
-				printk(msg);
+				printfk("[INFO] %s", msg);
 				break;
 			case LOGLEVEL::ERROR:
-				printk("[ERROR] ");
-				printk(msg);
+				printfk("[ERROR] %s", msg);
 				break;
 			case LOGLEVEL::PANIC:
-				printk("[PANIC] ");
-				printk(msg);
+				printfk("[PANIC] %s", msg);
 				break;
 			default:
 				printk(msg);
@@ -90,6 +89,46 @@ void logk(char* msg, enum LOGLEVEL level) {
 		printk("Error in logk: msg is null!");
 	}
 
+}
+
+
+void printfk(char* format...) {
+	va_list args;
+	va_start(args, format);
+
+	char* cur = format;
+	uint64_t idx = 0;
+	while(*cur != '\0') {
+		if (*cur == '%') {
+			cur++;
+			if (*cur == 'd') {
+				int64_t arg = va_arg(args, int64_t);
+				printk(itoa(arg));
+			} else if (*cur == 'u') {
+				uint64_t arg = va_arg(args, uint64_t);
+				printk(uitoa(arg));
+			} else if (*cur == 'x') {
+				uint64_t arg = va_arg(args, uint64_t);
+				printk(hex_to_str(arg));
+			} else if (*cur == 's') {
+				char* arg = va_arg(args, char*);
+				printk(arg);
+			} else if (*cur == '%') {
+				putchk("%");
+			} else {
+				putchk("%");
+				putchk(*cur);
+			}
+		} else {
+			putchk(*cur);
+		}
+		cur++;
+	}
+	va_end(args);
+}
+
+void putchk(char c) {
+	FrameBuffer::write(&c, 1);
 }
 
 void printk(char* msg) {

@@ -69,25 +69,18 @@ namespace Memory {
 						reclaimable_mem_bytes += entries[i]->length;
 						set_usable_mem_region(i, entry->base, entry->length);
 						//log_memory_region(i, entry->base, entry->length);
-						logk("Region ", KERNEL);
-						printk(uitoa(i));
-						printk(" is reclaimable.\n");
+						logfk(KERNEL, "Region %d is reclaimable\n", i);
 						break;
 					case LIMINE_MEMMAP_BAD_MEMORY: 
 						//TODO: Remove bad memory regions from usable_regions
 						bad_mem_bytes += entries[i]->length;
 						//log_memory_region(i, entry->base, entry->length);
-						logk("Region ", KERNEL);
-						printk(uitoa(i));
-						printk(" is unusable; Bad memory!\n");
+						logfk(KERNEL, "Region %d is unusable; Bad memory!\n", i);
 						break;
 					case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE:
 						reclaimable_mem_bytes += entries[i]->length;
 						set_usable_mem_region(i, entry->base, entry->length);
-						//log_memory_region(i, entry->base, entry->length);
-						logk("Region ", KERNEL);
-						printk(uitoa(i));
-						printk(" is reclaimable.\n");
+						logfk(KERNEL, "Region %d is reclaimable\n", i);
 						break;
 					case LIMINE_MEMMAP_RESERVED:
 						reserved_mem_bytes += entries[i]->length;
@@ -101,20 +94,18 @@ namespace Memory {
 						break;
 					default:
 						unknown_mem_bytes += entries[i]->length;
-						logk("Unknown entry type in limine memmap response!\n", ERROR); 
+						logfk(ERROR, "Unknown entry type in limine memmap response!\n"); 
 				}
 			}
 		} else {
-			logk("Could not get memmap request from limine\n", ERROR);
+			logfk(ERROR, "Could not get memmap request from limine\n");
 		}
 
 		if (hhdm.response != nullptr) {
 			hhdm_offset = hhdm.response->offset;
-			logk("Kernel virtual memory offset : ", KERNEL);
-			printk(hex_to_str(hhdm.response->offset));
-			printk("\n");
+			logfk(KERNEL, "Kernel virtual memory offset: %x\n", hhdm.response->offset);
 		} else {
-			logk("HHDM request to limine responded with NULL\n", ERROR);
+			logfk(ERROR, "HHDM request to limine responded with NULL\n");
 		}
 
 		if (kernel_address.response != nullptr) {
@@ -123,7 +114,7 @@ namespace Memory {
 			virt_addr_offset = kernel_virtual_addr_base - kernel_physical_addr_base;
 		} else {
 			virt_addr_offset = 0;
-			logk("Kernel address request to limine responded with NULL\n", ERROR);
+			logfk(ERROR, "Kernel address request to limine responded with NULL\n");
 		}
 
 	}

@@ -55,8 +55,8 @@ namespace Interrupts {
 
 	void test() {
 		int i = 1 / 0;
-		logk(itoa(i), NONE);
+		printfk("%d", i);
 
-		logk("Divided by 0\n", USER);
+		logfk(KERNEL, "Divided by 0\n");
 	}
 }

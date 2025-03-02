@@ -47,32 +47,29 @@ extern "C" void _start(void) {
 
 	FrameBuffer::init();
 	printk("Booting jnix....\n\n");
-	logk("Initialized framebuffer\n", KERNEL);
+	logfk(KERNEL, "Initialized framebuffer\n");
 	if (boot_time_req.response == nullptr) {
-		logk("Could not get boot time from Limine/RTC", ERROR);
-		halt();
+		logfk(ERROR, "Could not get boot time from Limine/RTC");
 	}
 
 	int64_t boottime = boot_time_req.response->boot_time;
-	logk("Boot time: ", KERNEL);
-	logk(itoa((int)boottime), NONE);
-	logk("\n", NONE);
+	logfk(KERNEL, "Boot time: %d\n", boottime);
 
-	logk("Loading new GDT\n", KERNEL);
+	logfk(KERNEL, "Loading new GDT\n");
 	GDT::init();
-	logk("GDT initialization complete\n", KERNEL);
+	logfk(KERNEL, "GDT initialization complete\n");
 
 	Interrupts::init();
-	logk("Interrupt initialization complete\n", KERNEL);
+	logfk(KERNEL, "Interrupt initialization complete\n");
 
-	logk("Gathering memory map\n", KERNEL);
+	logfk(KERNEL, "Gathering memory map\n");
 	Memory::init_memmap();
-	//Memory::log_memory_info();
-	logk("Initializing paging and memory management\n", KERNEL);
-	//Interrupts::test();
+	Memory::log_memory_info();
+	logfk(KERNEL, "Initializing paging and memory management\n");
+	Interrupts::test();
 	Memory::Paging::init();
 	Memory::Paging::test();
-	logk("Paging and memory management intialization complete\n", KERNEL);
+	logfk(KERNEL, "Paging and memory management intialization complete\n");
 
 
     	halt();
