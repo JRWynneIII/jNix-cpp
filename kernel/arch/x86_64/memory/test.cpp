@@ -52,6 +52,33 @@ namespace Memory {
 			}
 		}
 
+		// Function to test the C++ operators new/delete
+		void test_operators() {
+			logfk(KERNEL, "Running paging and allocation tests\n");
+			uint64_t* t1 = new uint64_t[5]; //kalloc(sizeof(uint64_t), 5);
+			logfk(KERNEL, "Testing allocation of 40 bytes: %x ", t1);
+			t1[0] = 1;
+			t1[1] = 2;
+			t1[2] = 3;
+			t1[3] = 4;
+			t1[4] = 5;
+			bool pass = true;
+			for (int i=0; i<5; i++) {
+				if (t1[i] != i+1) pass = false;
+			}
+			if (pass) {
+				printk(" PASSED\n");
+			} else {
+				printk(" FAILED\n");
+			}
+
+			dump_slab_list();
+			delete t1;
+			logfk(KERNEL, "Free'd %x\n", t1);
+			dump_slab_list();
+			logfk(KERNEL, "Memory management testing complete\n");
+		}
+
 		void test() {
 			logfk(KERNEL, "Running paging and allocation tests\n");
 			uint64_t* t1 = kalloc(sizeof(uint64_t), 5);

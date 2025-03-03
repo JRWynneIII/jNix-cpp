@@ -119,7 +119,7 @@ namespace Memory {
 			if (!entry->present) {
 				//create entry
 				pt_entry_t new_entry;
-				new_entry.present = 0;
+				new_entry.present = 1;
 				new_entry.rw = 1;
 				new_entry.phys_addr = phys_addr;
 				// Write the pt entry
@@ -297,7 +297,7 @@ namespace Memory {
 				// If requested slab is smaller than found slab, then bifurcate the slab
 				slab_t new_slab = {slab->next, slab, slab->size - numbytes, true};
 
-				slab_t* new_slab_addr = slab + slab->size + sizeof(slab_t);
+				slab_t* new_slab_addr = slab + numbytes + sizeof(slab_t);
 
 				slab->next->previous = new_slab_addr;
 				slab->size = numbytes;
@@ -332,4 +332,13 @@ namespace Memory {
 			slab_head = create_new_pages(1);
 		}
 	}
+}
+
+// Wrappers around the Memory::Paging functions to allow a more C-like calling method
+void* kmalloc(uint64_t sizebytes) {
+	return Memory::Paging::kalloc(sizebytes, 1);
+}
+
+void kfree(void* ptr) {
+	return Memory::Paging::kfree(ptr);
 }

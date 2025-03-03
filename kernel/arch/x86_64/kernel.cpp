@@ -66,9 +66,10 @@ extern "C" void _start(void) {
 	Memory::init_memmap();
 	Memory::log_memory_info();
 	logfk(KERNEL, "Initializing paging and memory management\n");
-	Interrupts::test();
+//	Interrupts::test();
 	Memory::Paging::init();
 	Memory::Paging::test();
+	Memory::Paging::test_operators();
 	logfk(KERNEL, "Paging and memory management intialization complete\n");
 
 

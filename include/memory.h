@@ -1,4 +1,5 @@
 #pragma once
+#include<cstdint>
 
 #define TO_VIRT_ADDR(a) ((uintptr_t)a | Memory::hhdm_offset)
 #define PAGE_SIZE_BYTES 4096
@@ -140,5 +141,9 @@ namespace Memory {
 		void* kalloc(uint64_t objsize, uint64_t num);
 		void init();
 		void test();
+		void test_operators();
 	}
 }
+
+void* kmalloc(uint64_t sizebytes);
+void kfree(void* ptr);
