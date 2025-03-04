@@ -4,6 +4,8 @@
 #include<stdlib.h>
 #include<kernel.h>
 #include<memory.h>
+#include<kernel/safe_ptr.hpp>
+#include<unwind.h>
 
 namespace Memory {
 	void log_memory_region(uint64_t idx, uint64_t base, uint64_t length) {
@@ -187,6 +189,21 @@ namespace Memory {
 			logfk(KERNEL, "Free'd %x\n", t5);
 			dump_slab_list();
 			logfk(KERNEL, "Memory management testing complete\n");
+		}
+
+		void safe_ptr_test() {
+			safe_ptr<uint64_t> t1 = kmalloc<uint64_t>(sizeof(uint64_t) * 5);
+			for (int i = 0; i < 5; i++) {
+				t1[i] = i*2;
+			}
+
+			//t1[6] = 999;
+			//t1[7] = 888;
+			for (int i = 0; i < 5; i++) {
+				printfk("%d\n", t1[i]);
+			}
+
+			logfk(INFO, "{ ptr = %x, size = %d }\n", t1.get_raw(), t1.get_size());
 		}
 	}
 }

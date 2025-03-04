@@ -4,6 +4,7 @@
 #include<stdlib.h>
 #include<kernel.h>
 #include<memory.h>
+#include<kernel/safe_ptr.hpp>
 
 namespace Memory {
 	namespace Paging {
@@ -340,5 +341,5 @@ void* kmalloc(uint64_t sizebytes) {
 }
 
 void kfree(void* ptr) {
-	return Memory::Paging::kfree(ptr);
+	Memory::Paging::kfree(ptr);
 }

@@ -70,6 +70,7 @@ extern "C" void _start(void) {
 	Memory::Paging::init();
 	Memory::Paging::test();
 	Memory::Paging::test_operators();
+	Memory::Paging::safe_ptr_test();
 	logfk(KERNEL, "Paging and memory management intialization complete\n");
 
 

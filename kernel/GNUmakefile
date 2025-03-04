@@ -26,7 +26,7 @@ $(eval $(call DEFAULT_VAR,LD,x86_64-elf-ld))
 CFLAGS ?= -g -O0 -pipe -Wall -Wextra -fpermissive -Wwrite-strings -fno-threadsafe-statics -w
 
 # User controllable preprocessor flags. We set none by default.
-CPPFLAGS ?=
+CPPFLAGS ?= -fno-exceptions
 
 # User controllable nasm flags.
 NASMFLAGS ?= -F dwarf -g
