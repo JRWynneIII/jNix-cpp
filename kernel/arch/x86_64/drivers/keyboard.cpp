@@ -37,6 +37,7 @@ void keyboard_driver::irq_handler(struct registers* r) {
 	if ((scancode & 0x80) != 0) return;
 
 	Streams::stdin.append(chars[scancode]);
+
 }
 
 uint8_t getch() {
