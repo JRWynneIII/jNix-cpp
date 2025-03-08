@@ -13,18 +13,18 @@
 
 // DO NOT REMOVE
 extern "C" {
-    int __cxa_atexit(void (*)(void *), void *, void *) { return 0; }
-    //void __cxa_pure_virtual() { halt(); }
-    void *__dso_handle;
+	int __cxa_atexit(void (*)(void *), void *, void *) { return 0; }
+	void __cxa_pure_virtual() {
+		logfk(ERROR, "Missing virtual function\n");
+		halt(); 
+	}
+
+	void *__dso_handle;
 }
 
 // Extern declarations for global constructors array.
 extern void (*__init_array[])();
 extern void (*__init_array_end[])();
-
-extern "C" void __cxa_pure_virtual() {
-	logfk(ERROR, "Missing virtual function\n");
-}
 
 namespace {
 	__attribute__((used, section(".limine_requests")))
@@ -68,6 +68,7 @@ extern "C" void _start(void) {
 //	Interrupts::test();
 	Memory::Paging::init();
 	logfk(KERNEL, "Paging and memory management intialization complete\n");
+	
 	// Run our global constructors
 	for (std::size_t i = 0; &__init_array[i] != __init_array_end; i++) {
 	    __init_array[i]();
