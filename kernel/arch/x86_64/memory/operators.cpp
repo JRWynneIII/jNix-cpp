@@ -1,7 +1,7 @@
 #include<stddef.h>
-#include<memory.h>
+#include<kernel/memory.h>
 #include<new>
-#include<kernel/safe_ptr.hpp>
+#include<kernel/ptr.hpp>
 
 void* operator new(size_t size) {
 	return Memory::Paging::kalloc(size, 1);

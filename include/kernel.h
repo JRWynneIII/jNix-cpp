@@ -4,6 +4,7 @@
 void printk(char* msg);
 void putchk(char c);
 void printfk(char* format...);
+uint8_t getch();
 
 enum LOGLEVEL {
 	KERNEL,

@@ -158,6 +158,8 @@ namespace Interrupts {
 		//Restore masks
 		outportb(PIC1_DATA, m1);
 		outportb(PIC1_DATA, m2);
+		outportb(0x21,0xfd);
+		outportb(0xa1,0xff);
 	}
 
 	void init() {
@@ -206,12 +208,12 @@ namespace Interrupts {
 		logfk(KERNEL, "Loading IDT");
 		load_idt();
 		printk("....DONE\n");
+		logfk(KERNEL, "Initializing PIC");
+		init_pic();
+		printk("....DONE\n");
 		//Enable interrupts
 		logfk(KERNEL, "Enabling interrupts");
 		__asm__ __volatile__("sti");
-		printk("....DONE\n");
-		logfk(KERNEL, "Initializing PIC");
-		init_pic();
 		printk("....DONE\n");
 	}
 

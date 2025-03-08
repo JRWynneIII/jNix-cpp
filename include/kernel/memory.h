@@ -1,6 +1,6 @@
 #pragma once
 #include<cstdint>
-#include<kernel/safe_ptr.hpp>
+#include<kernel/ptr.hpp>
 
 #define TO_VIRT_ADDR(a) ((uintptr_t)a | Memory::hhdm_offset)
 #define PAGE_SIZE_BYTES 4096
@@ -143,18 +143,15 @@ namespace Memory {
 		void init();
 		void test();
 		void test_operators();
-		void safe_ptr_test();
+		void ptr_t_test();
 	}
 }
 
-//Avoid using this! Use kmalloc or ptr_t<> to allocate memory
-void* kalloc(uint64_t sizebytes);
-
 //God i hate defining functions inside headers
 template<typename T>
-safe_ptr<T> kmalloc(uint64_t sizebytes) {
+ptr_t<T> kmalloc(uint64_t sizebytes) {
 	void* ptr = Memory::Paging::kalloc(sizebytes, 1);
-	return safe_ptr<T>((T)ptr, sizebytes);
+	return ptr_t<T>((T)ptr, sizebytes);
 
 }
 void kfree(void* ptr);

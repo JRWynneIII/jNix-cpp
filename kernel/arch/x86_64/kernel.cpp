@@ -5,20 +5,26 @@
 #include<limine.h>
 #include<stdlib.h>
 #include<kernel.h>
-#include<memory.h>
+#include<kernel/memory.h>
 #include<gdt.h>
 #include<interrupts.h>
+#include<kernel/drivers.h>
+#include<cxxabi.h>
 
 // DO NOT REMOVE
 extern "C" {
     int __cxa_atexit(void (*)(void *), void *, void *) { return 0; }
-    void __cxa_pure_virtual() { halt(); }
+    //void __cxa_pure_virtual() { halt(); }
     void *__dso_handle;
 }
 
 // Extern declarations for global constructors array.
 extern void (*__init_array[])();
 extern void (*__init_array_end[])();
+
+extern "C" void __cxa_pure_virtual() {
+	logfk(ERROR, "Missing virtual function\n");
+}
 
 namespace {
 	__attribute__((used, section(".limine_requests")))
@@ -40,11 +46,6 @@ extern "C" void _start(void) {
 		halt();
 	}
 
-	// Run our global constructors
-	for (std::size_t i = 0; &__init_array[i] != __init_array_end; i++) {
-	    __init_array[i]();
-	}
-
 	FrameBuffer::init();
 	printk("Booting jnix....\n\n");
 	logfk(KERNEL, "Initialized framebuffer\n");
@@ -59,8 +60,6 @@ extern "C" void _start(void) {
 	GDT::init();
 	logfk(KERNEL, "GDT initialization complete\n");
 
-	Interrupts::init();
-	logfk(KERNEL, "Interrupt initialization complete\n");
 
 	logfk(KERNEL, "Gathering memory map\n");
 	Memory::init_memmap();
@@ -68,10 +67,27 @@ extern "C" void _start(void) {
 	logfk(KERNEL, "Initializing paging and memory management\n");
 //	Interrupts::test();
 	Memory::Paging::init();
-	Memory::Paging::test();
-	Memory::Paging::test_operators();
-	Memory::Paging::safe_ptr_test();
 	logfk(KERNEL, "Paging and memory management intialization complete\n");
+	// Run our global constructors
+	for (std::size_t i = 0; &__init_array[i] != __init_array_end; i++) {
+	    __init_array[i]();
+	}
+
+	logfk(KERNEL, "Loading drivers...\n");
+	Drivers::load_drivers();
+	logfk(KERNEL, "Initializing drivers...\n");
+	Drivers::init();
+	Interrupts::init();
+	logfk(KERNEL, "Interrupt initialization complete\n");
+
+//	Memory::Paging::test();
+//	Memory::Paging::test_operators();
+//	Memory::Paging::ptr_t_test();
+	for(;;) {
+		char c = getch();
+		printfk("%c",c);
+	}
+
 
 
     	halt();

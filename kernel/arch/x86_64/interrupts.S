@@ -289,21 +289,21 @@ isr_stub:
 	mov %rsp, %rdi // This moves a pointer to the stack to the 'first argument' of the function call
 	call fault_handler
 
-	pop %rax
-	pop %rbx
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi
-	pop %rbp
-	pop %r8
-	pop %r9
-	pop %r10
-	pop %r11
-	pop %r12
-	pop %r13
-	pop %r14
 	pop %r15
+	pop %r14
+	pop %r13
+	pop %r12
+	pop %r11
+	pop %r10
+	pop %r9
+	pop %r8
+	pop %rbp
+	pop %rdi
+	pop %rsi
+	pop %rdx
+	pop %rcx
+	pop %rbx
+	pop %rax
 	swap_gs
 
 	add $16, %rsp
@@ -353,21 +353,21 @@ irq_stub:
 	mov %rsp, %rdi // This moves a pointer to the stack to the 'first argument' of the function call
 	call irq_handler
 
-	pop %rax
-	pop %rbx
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi
-	pop %rbp
-	pop %r8
-	pop %r9
-	pop %r10
-	pop %r11
-	pop %r12
-	pop %r13
-	pop %r14
 	pop %r15
+	pop %r14
+	pop %r13
+	pop %r12
+	pop %r11
+	pop %r10
+	pop %r9
+	pop %r8
+	pop %rbp
+	pop %rdi
+	pop %rsi
+	pop %rdx
+	pop %rcx
+	pop %rbx
+	pop %rax
 
 	swap_gs
 	add $16, %rsp

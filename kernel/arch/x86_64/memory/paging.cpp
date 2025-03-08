@@ -3,8 +3,9 @@
 #include<string.h>
 #include<stdlib.h>
 #include<kernel.h>
-#include<memory.h>
-#include<kernel/safe_ptr.hpp>
+#include<kernel/memory.h>
+#include<kernel/ptr.hpp>
+#include<cstdint>
 
 namespace Memory {
 	namespace Paging {
@@ -336,7 +337,7 @@ namespace Memory {
 }
 
 // Wrappers around the Memory::Paging functions to allow a more C-like calling method
-void* kmalloc(uint64_t sizebytes) {
+void* kalloc(uint64_t sizebytes) {
 	return Memory::Paging::kalloc(sizebytes, 1);
 }
 

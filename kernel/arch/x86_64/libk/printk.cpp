@@ -113,6 +113,9 @@ void printfk(char* format...) {
 			} else if (*cur == 's') {
 				char* arg = va_arg(args, char*);
 				printk(arg);
+			} else if (*cur == 'c') {
+				int arg = va_arg(args, int);
+				putchk(arg);
 			} else if (*cur == '%') {
 				putchk("%");
 			} else {

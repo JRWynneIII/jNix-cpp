@@ -3,8 +3,8 @@
 #include<string.h>
 #include<stdlib.h>
 #include<kernel.h>
-#include<memory.h>
-#include<kernel/safe_ptr.hpp>
+#include<kernel/memory.h>
+#include<kernel/ptr.hpp>
 #include<unwind.h>
 
 namespace Memory {
@@ -191,19 +191,52 @@ namespace Memory {
 			logfk(KERNEL, "Memory management testing complete\n");
 		}
 
-		void safe_ptr_test() {
-			safe_ptr<uint64_t> t1 = kmalloc<uint64_t>(sizeof(uint64_t) * 5);
-			for (int i = 0; i < 5; i++) {
-				t1[i] = i*2;
-			}
+		void ptr_t_test() {
+			// Test manual allocation of pointers. (NOTE: Kmalloc will return a ptr_t)
+			printfk("Allocating t1\n");
+			ptr_t<uint64_t> t1 = kmalloc<uint64_t>(sizeof(uint64_t) * 5);
+			// Wrap a raw pointer in a ptr_t
+			printfk("Allocating t2\n");
+			ptr_t<uint64_t> t2 = ptr_t<uint64_t>(new uint64_t[5], sizeof(uint64_t) * 5);
+			// Implicit kmalloc in constructor
+			// NOTE: These should be the default ways to allocate memory in the kernel!
+			printfk("Allocating t3\n");
+			ptr_t<uint64_t> t3 = ptr_t<uint64_t>(sizeof(uint64_t) * 5);
+			printfk("Allocating t4\n");
+			//We *probably* don't want to do this too much, but it does work.
+			//This functionally creates a uint64_t**, since t4 is a ptr that contains a ptr
+			ptr_t<uint64_t>* t4 = new ptr_t<uint64_t>(sizeof(uint64_t) * 5);
 
+
+			// Set values
+			for (int i = 0; i < 5; i++) t1[i] = i*2;
+			for (int i = 0; i < 5; i++) t2[i] = i*3;
+			for (int i = 0; i < 5; i++) t3[i] = i*4;
+			for (int i = 0; i < 5; i++) t4->at(i) = i*5;
+
+			//Test triggering the failure case
 			//t1[6] = 999;
 			//t1[7] = 888;
-			for (int i = 0; i < 5; i++) {
-				printfk("%d\n", t1[i]);
-			}
 
-			logfk(INFO, "{ ptr = %x, size = %d }\n", t1.get_raw(), t1.get_size());
+			//Dump contents to screen
+			for (int i = 0; i < 5; i++) printfk("%d\t", t1[i]);
+			printk("\n");
+			for (int i = 0; i < 5; i++) printfk("%d\t", t2[i]);
+			printk("\n");
+			for (int i = 0; i < 5; i++) printfk("%d\t", t3[i]);
+			printk("\n");
+			for (int i = 0; i < 5; i++) printfk("%d\t", t4->at(i));
+			printk("\n");
+
+			// Dump the ptr_t values to the screen
+			logfk(INFO, "%x: { ptr = %x, size = %d }\n", &t1, t1.get_raw(), t1.get_size(), t1.get_num_elements());
+			logfk(INFO, "%x: { ptr = %x, size = %d }\n", &t2, t2.get_raw(), t2.get_size(), t2.get_num_elements());
+			logfk(INFO, "%x: { ptr = %x, size = %d }\n", &t3, t3.get_raw(), t3.get_size(), t3.get_num_elements());
+			logfk(INFO, "%x: { ptr = %x, size = %d }\n", t4, t4->get_raw(), t4->get_size(), t4->get_num_elements());
+			
+			// Need to manually delete this since it was manually allocated
+			// This will trigger the destructor of the object, deallocating the internal pointer
+			delete t4;
 		}
 	}
 }

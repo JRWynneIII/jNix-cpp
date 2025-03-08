@@ -5,7 +5,7 @@
 #include<cstddef>
 #include<stdlib.h>
 #include<stdio.h>
-#include<memory.h>
+#include<kernel/memory.h>
 
 namespace Memory {
 	__attribute__((used, section(".limine_requests")))
