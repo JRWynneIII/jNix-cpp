@@ -8,6 +8,7 @@
 #include <cstdarg>
 #include <flanterm/flanterm.h>
 #include <flanterm/backends/fb.h>
+#include <kernel/streams.h>
 
 namespace {
 	__attribute__((used, section(".limine_requests")))
@@ -148,3 +149,16 @@ void printk(char* msg) {
 	}
 	return;
 }
+
+uint8_t getch() {
+	//pop first char from the stream
+	uint8_t c = Streams::stdin.at(0);
+	//Poll until we have a character in the stream
+	while(c == 0) {
+		c = Streams::stdin.at(0);
+	}
+	// Bump the queue down 1
+	Streams::stdin.pop();
+}
+
+

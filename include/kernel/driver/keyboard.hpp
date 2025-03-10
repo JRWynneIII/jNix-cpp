@@ -2,8 +2,13 @@
 
 class keyboard_driver : public driver_t {
 private:
+	//TODO: Add support for scancode set 2 and disable translation
+	//TODO: Combine keyboard_driver with ps2_driver
+	//	Add the keyboard and mouse to a global 'Devices' tree
 	//TODO: this is garbage, clean this up!
-	uint8_t scancodes[128] = {
+	uint8_t scancodes_set2[128] = {};
+	uint8_t scancodes_set2_upper[128] = {};
+	uint8_t scancodes_set1[128] = {
 		0,27,'1','2','3','4','5','6','7','8',
 		'9','0','-','=','\b',//  Backspace 
 		'\t', //  Tab 
@@ -42,7 +47,7 @@ private:
 		0,  //  All other keys are undefined 
 	};
 	
-	uint8_t scancodes_upper[128] = {
+	uint8_t scancodes_set1_upper[128] = {
 		0,27,'!','@','#','$','%','^','&','&', //9
 		'(',')','_','+','\b', //Backspace
 		'\t', //Tab
@@ -81,9 +86,15 @@ private:
 		0, //Allotherkeysareundefined
 	};
 	bool shift_pressed = false;
+	enum irq_handler_override_e {
+		PS2,
+		USB,
+		DEFAULT
+	} irq_handler_override;
 
 public:
 	keyboard_driver();
 	virtual void install(uint64_t idx);
 	virtual void irq_handler(struct registers* r);
+	void ps2_irq_handler(struct registers* r);
 };

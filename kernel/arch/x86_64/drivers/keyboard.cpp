@@ -1,22 +1,31 @@
 #include<cstdint>
 #include<kernel/ptr.hpp>
+#include<kernel/driver/ps2.hpp>
 #include<kernel/driver/driver.hpp>
 #include<kernel/driver/keyboard.hpp>
 #include<kernel.h>
 #include<port.h>
 #include<interrupts.h>
+#include<kernel/streams.h>
+#include<kernel/drivers.h>
+#include<kernel/driver/ps2.hpp>
+#include<cstdint>
+#include<string.h>
 
-#define KB_PORT 0x60
-
-namespace Streams {
-	//TODO: I WOULD KILL FOR A VECTOR
-	//ptr_t<char> stdin = new ptr_t<char>(128*sizeof(char));
-	ptr_t<uint8_t> stdin = ptr_t<uint8_t>(128*sizeof(uint8_t));
+//TODO: Clean this up by creating a 'device tree' and assigning this driver to the device itself. 
+//	depending on what root device driver owns this (for insatnce the ps2 or usb driver), assign
+//	the irq handler and irq no appropriately
+void keyboard_driver::irq_handler(struct registers* r) {
+	switch(this->irq_handler_override) {
+		case PS2:
+			this->ps2_irq_handler(r);
+		default:
+			this->ps2_irq_handler(r);
+	}
 }
 
-
-void keyboard_driver::irq_handler(struct registers* r) {
-	uint8_t scancode = inportb(KB_PORT);
+void keyboard_driver::ps2_irq_handler(struct registers* r) {
+	uint8_t scancode = inportb(PS2_DATA_PORT);
 	//Toggles shift key
 	if (scancode == 0xAA || scancode == 0xB6) {
 		this->shift_pressed = false;
@@ -27,8 +36,8 @@ void keyboard_driver::irq_handler(struct registers* r) {
 	}
 	
 	// Toggle the right character set based upon shift
-	uint8_t* chars = this->scancodes;
-	if (this->shift_pressed) chars = this->scancodes_upper;
+	uint8_t* chars = this->scancodes_set1;
+	if (this->shift_pressed) chars = this->scancodes_set1_upper;
 
 	// If we don't understand the scancode, just skip it
 	if (chars[scancode] == 0) return;
@@ -37,71 +46,39 @@ void keyboard_driver::irq_handler(struct registers* r) {
 	if ((scancode & 0x80) != 0) return;
 
 	Streams::stdin.append(chars[scancode]);
-
-}
-
-uint8_t getch() {
-	//pop first char from the stream
-	uint8_t c = Streams::stdin.at(0);
-	//Poll until we have a character in the stream
-	while(c == 0) {
-		c = Streams::stdin.at(0);
-	}
-	// Bump the queue down 1
-	Streams::stdin.pop();
-}
-
-
-namespace Drivers {
-	// TODO: when you port a stdlib, change this from a linked list to a vector. PLEASE
-	driver_t* driver_list;
-	uint64_t kb_driver_idx = 0;
-
-	void register_driver(driver_t* d) {
-		if (driver_list == nullptr) {
-			driver_list = d;
-			return;
-		}
-
-		driver_t* cur = driver_list;
-		while(cur->get_next() != nullptr) {
-			cur = cur->get_next();
-		}
-		cur->set_next(d);
-	}
-
-	void init() {
-		driver_t* cur = driver_list;
-		// If we only have 1 in the list, install it
-		uint64_t idx = 0;
-		if (cur != nullptr && cur->get_next() == nullptr) {
-			cur->install(idx);
-			cur = cur->get_next();
-		}
-
-		while(cur != nullptr && cur->get_next() != nullptr) {
-			cur->install(idx);
-			cur = cur->get_next();
-		}
-	}
-
-	void load_drivers() {
-		keyboard_driver* kb = new keyboard_driver();
-		register_driver(kb);
-		//TODO: more drivers go here
-	}
 }
 
 void kb_driver_wrapper(struct registers* r) {
-	Drivers::driver_list[Drivers::kb_driver_idx].irq_handler(r);
+	Drivers::keyboard_driver_ptr->irq_handler(r);
 }
 
 void keyboard_driver::install(uint64_t idx) {
 	logfk(KERNEL, "Installing keyboard driver\n");
-	Drivers::kb_driver_idx = idx;
-	Interrupts::install_handler(this->irq_no, kb_driver_wrapper);
+	this->set_name("kb");
+
+	driver_t* ps2 = Drivers::driver_list;
+	while(ps2 != nullptr) {
+		logfk(KERNEL, "Found driver %s\n", ps2->get_name());
+		//TODO: make a strcmp routine, or convert these to a custom "String" type
+		if (strcmp(ps2->get_name(), "ps2")) {
+			break;
+		}
+		ps2 = ps2->get_next();
+	}
+
+	if (ps2 == nullptr) {
+		logfk(ERROR, "Could not find ps2 controller driver!\n");
+	} else {
+		ps2_driver* d = static_cast<ps2_driver*>(ps2);
+		if (d->get_port1_device().is_kb || d->get_port2_device().is_kb) {
+			logfk(KERNEL, "Setting PS2 handler for irq_handler for keyboard_driver\n");
+			this->irq_handler_override = PS2;
+		}
+		Interrupts::install_handler(this->irq_no, kb_driver_wrapper);
+	}
 }
 
 keyboard_driver::keyboard_driver() {
 	this->irq_no = 1;
+	this->irq_handler_override = DEFAULT;
 }

@@ -4,6 +4,7 @@
 class driver_t {
 private:
 	driver_t* next;
+	char* name;
 public:
 	uint64_t irq_no;
 
@@ -21,5 +22,13 @@ public:
 
 	void set_next(driver_t* d) {
 		this->next = d;
+	}
+
+	char* get_name() {
+		return this->name;
+	}
+
+	void set_name(char* name) {
+		this->name = name;
 	}
 };

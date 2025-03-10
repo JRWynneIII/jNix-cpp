@@ -78,6 +78,7 @@ extern "C" void _start(void) {
 	Drivers::load_drivers();
 	logfk(KERNEL, "Initializing drivers...\n");
 	Drivers::init();
+	//Drivers::dump_ps2_config();
 	Interrupts::init();
 	logfk(KERNEL, "Interrupt initialization complete\n");
 
@@ -85,6 +86,7 @@ extern "C" void _start(void) {
 //	Memory::Paging::test_operators();
 //	Memory::Paging::ptr_t_test();
 	for(;;) {
+	//	Drivers::dump_ps2_config();
 		char c = getch();
 		printfk("%c",c);
 	}
