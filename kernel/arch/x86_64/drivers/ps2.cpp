@@ -1,8 +1,11 @@
 #include<kernel/drivers.h>
+#include<kernel/streams.h>
 #include<port.h>
 #include<kernel/driver/ps2.hpp>
 #include<cstdint>
 #include<kernel.h>
+#include<kernel/devicetree.h>
+#include<interrupts.h>
 
 ps2_driver::ps2_driver() {}
 
@@ -49,8 +52,8 @@ ps2_config_t ps2_driver::get_config() {
 void ps2_driver::detect_devices() {
 	if (this->port1_enabled)
 		this->detect_device_port1();
-//	if (this->port2_enabled)
-//		this->detect_device_port2();
+	if (this->port2_enabled)
+		this->detect_device_port2();
 }
 
 bool ps2_driver::writeb_device2(uint8_t port, uint8_t value, uint64_t timeout) {
@@ -76,6 +79,7 @@ void ps2_driver::detect_device_port2() {
 	}
 	if (!this->input_ready()) {
 		logfk(ERROR, "PS2 controller input buffer not ready; timeout reached\n");
+		this->port2_enabled = false;
 		return;
 	}
 
@@ -83,11 +87,13 @@ void ps2_driver::detect_device_port2() {
 	bool success = this->writeb_device2(PS2_DATA_PORT, 0xF5, poll_timeout);
 	if (!success) {
 		logfk(ERROR, "Could not communicate with PS2 device 2!; timeout reached (disable scanning)\n");
+		this->port2_enabled = false;
 		return;
 	}
 	uint8_t ack = this->poll(PS2_DATA_PORT, 0xFA, poll_timeout);
 	if (ack != 0xFA) {
 		logfk(ERROR, "Did not rx ACK (0xFA) from PS2 device 2 while disabling scanning; timeout reached, rx'd: %d\n", ack);
+		this->port2_enabled = false;
 		return;
 	}
 
@@ -95,11 +101,13 @@ void ps2_driver::detect_device_port2() {
 	success = this->writeb_device2(PS2_DATA_PORT, 0xF2, poll_timeout);
 	if (!success) {
 		logfk(ERROR, "Could not communicate with PS2 device 2!; timeout reached (request identify)\n");
+		this->port2_enabled = false;
 		return;
 	}
 	ack = this->poll(PS2_DATA_PORT, 0xFA, poll_timeout);
 	if (ack != 0xFA) {
 		logfk(ERROR, "Did not rx ACK (0xFA) from PS2 device 2 during identify; timeout reached, rx'd: %d\n", ack);
+		this->port2_enabled = false;
 		return;
 	}
 
@@ -124,6 +132,7 @@ void ps2_driver::detect_device_port2() {
 	success = this->writeb_device2(PS2_DATA_PORT, 0xF4, poll_timeout);
 	if (!success) {
 		logfk(ERROR, "Could not communicate with PS2 device 2!; timeout reached (enable scanning)\n");
+		this->port2_enabled = false;
 		return;
 	}
 
@@ -132,10 +141,14 @@ void ps2_driver::detect_device_port2() {
 		if (ident_port2_byte1 == cur.byte1 && ident_port2_byte2 == cur.byte2) {
 			this->port2_device = cur;
 			break;
+		} else if (ident_port2_byte1 == cur.trans_byte1 && ident_port2_byte2 == cur.trans_byte2) {
+			this->port2_device = cur;
+			break;
 		}
 	}
 
 	logfk(KERNEL, "PS2 port 2 device: %s\n", this->port2_device.device);
+	Devices::add_device(this, this->port2_device.desc, this->port2_device.device);
 }
 
 void ps2_driver::reset_port1() {
@@ -154,11 +167,13 @@ void ps2_driver::reset_port1() {
 	uint8_t ack = this->poll(PS2_DATA_PORT, 0xFA, poll_timeout);
 	if (ack != 0xFA) {
 		logfk(ERROR, "Did not rx ACK (0xFA) from PS2 device 1 while resetting; timeout reached, rx'd: %x\n", ack);
+		this->port1_enabled = false;
 		return;
 	}
 	uint8_t st = this->poll(PS2_DATA_PORT, 0xAA, poll_timeout);
 	if (st != 0xAA) {
 		logfk(ERROR, "Did not rx Self-Test Pass (0xAA) from PS2 device 1 while resetting or timeout reached, rx'd: %x\n", st);
+		this->port1_enabled = false;
 		return;
 	}
 	logfk(KERNEL, "PS2 port 1 reset and passed self test\n");
@@ -174,17 +189,20 @@ void ps2_driver::reset_port2() {
 	}
 	if (!this->input_ready()) {
 		logfk(ERROR, "PS2 controller input buffer not ready; timeout reached\n");
+		this->port2_enabled = false;
 		return;
 	}
 	this->writeb_device2(PS2_DATA_PORT, 0xFF, poll_timeout);
 	uint8_t ack = this->poll(PS2_DATA_PORT, 0xFA, poll_timeout);
 	if (ack != 0xFA) {
 		logfk(ERROR, "Did not rx ACK (0xFA) from PS2 device 1 while resetting; timeout reached, rx'd: %d\n", ack);
+		this->port2_enabled = false;
 		return;
 	}
 	uint8_t st = this->poll(PS2_DATA_PORT, 0xAA, poll_timeout);
 	if (st != 0xAA) {
 		logfk(ERROR, "Did not rx Self-Test Pass (0xAA) from PS2 device 2 while resetting or timeout reached, rx'd: %x\n", st);
+		this->port2_enabled = false;
 		return;
 	}
 	logfk(KERNEL, "PS2 port 2 reset and passed self test\n");
@@ -201,6 +219,7 @@ void ps2_driver::detect_device_port1() {
 	}
 	if (!this->input_ready()) {
 		logfk(ERROR, "PS2 controller input buffer not ready; timeout reached\n");
+		this->port1_enabled = false;
 		return;
 	}
 
@@ -209,6 +228,7 @@ void ps2_driver::detect_device_port1() {
 	uint8_t ack = this->poll(PS2_DATA_PORT, 0xFA, poll_timeout);
 	if (ack != 0xFA) {
 		logfk(ERROR, "Did not rx ACK (0xFA) from PS2 device 1 while disabling scanning; timeout reached, rx'd: %d\n", ack);
+		this->port1_enabled = false;
 		return;
 	}
 
@@ -217,6 +237,7 @@ void ps2_driver::detect_device_port1() {
 	ack = this->poll(PS2_DATA_PORT, 0xFA, poll_timeout);
 	if (ack != 0xFA) {
 		logfk(ERROR, "Did not rx ACK (0xFA) from PS2 device 1 during identify; timeout reached, rx'd: %d\n", ack);
+		this->port1_enabled = false;
 		return;
 	}
 
@@ -245,10 +266,14 @@ void ps2_driver::detect_device_port1() {
 		if (ident_port1_byte1 == cur.byte1 && ident_port1_byte2 == cur.byte2) {
 			this->port1_device = cur;
 			break;
+		} else if (ident_port1_byte1 == cur.trans_byte1 && ident_port1_byte2 == cur.trans_byte2) {
+			this->port1_device = cur;
+			break;
 		}
 	}
 
 	logfk(KERNEL, "PS2 port 1 device: %s\n", this->port1_device.device);
+	Devices::add_device(this, this->port1_device.desc, this->port1_device.device);
 }
 
 uint8_t ps2_driver::poll(uint8_t port, uint8_t value, uint64_t timeout) {
@@ -263,9 +288,13 @@ uint8_t ps2_driver::poll(uint8_t port, uint8_t value, uint64_t timeout) {
 	return cur;
 }
 
+void ps2_kb_driver_wrapper(struct registers* r) {
+	Drivers::ps2_driver_ptr->keyboard_irq_handler(r);
+}
+
 void ps2_driver::install(uint64_t idx) {
 	logfk(KERNEL, "Installing PS2 controller driver\n");
-	Drivers::ps2_driver_idx = idx;
+	//Drivers::ps2_driver_idx = idx;
 	this->set_name("ps2");
 
 	this->disable_port1();
@@ -317,6 +346,10 @@ void ps2_driver::install(uint64_t idx) {
 
 	this->detect_devices();
 	this->flush_output_buffer();
+
+	if (this->port1_enabled) {
+		Interrupts::install_handler(this->kb_irq, ps2_kb_driver_wrapper);
+	}
 }
 
 void ps2_driver::dump_config() {
@@ -369,6 +402,9 @@ bool ps2_driver::self_test() {
 	uint8_t status = inportb(PS2_DATA_PORT);
 	if (status != 0x55) {
 		logfk(ERROR, "PS2 controller failed self test! Resp: %d\n", status);
+		this->enabled = false;
+		this->port1_enabled = false;
+		this->port2_enabled = false;
 		return false;
 	}
 
@@ -424,12 +460,16 @@ void ps2_driver::test_port1() {
 		this->port1_enabled = true;
 	} else if (status == 0x01) {
 		logfk(ERROR, "PS2 Port1 failed self test: clock line stuck low\n");
+		this->port1_enabled = false;
 	} else if (status == 0x02) {
 		logfk(ERROR, "PS2 Port1 failed self test: clock line stuck high\n");
+		this->port1_enabled = false;
 	} else if (status == 0x03) {
 		logfk(ERROR, "PS2 Port1 failed self test: data line stuck low\n");
+		this->port1_enabled = false;
 	} else if (status == 0x04) {
 		logfk(ERROR, "PS2 Port1 failed self test: data line stuck high\n");
+		this->port1_enabled = false;
 	}
 
 }
@@ -443,12 +483,16 @@ void ps2_driver::test_port2() {
 		this->port2_enabled = true;
 	} else if (status == 0x01) {
 		logfk(ERROR, "PS2 Port2 failed self test: clock line stuck low\n");
+		this->port2_enabled = false;
 	} else if (status == 0x02) {
 		logfk(ERROR, "PS2 Port2 failed self test: clock line stuck high\n");
+		this->port2_enabled = false;
 	} else if (status == 0x03) {
 		logfk(ERROR, "PS2 Port2 failed self test: data line stuck low\n");
+		this->port2_enabled = false;
 	} else if (status == 0x04) {
 		logfk(ERROR, "PS2 Port2 failed self test: data line stuck high\n");
+		this->port2_enabled = false;
 	}
 }
 
@@ -457,4 +501,30 @@ void ps2_driver::flush_output_buffer() {
 	inportb(PS2_DATA_PORT);
 }
 
+void ps2_driver::keyboard_irq_handler(struct registers* r) {
+	//TODO: we're getting double characters now for some weird reason????
+	uint8_t scancode = inportb(PS2_DATA_PORT);
+	//Toggles shift key
+	if (scancode == 0xAA || scancode == 0xB6) {
+		this->shift_pressed = false;
+		return;
+	} else if (scancode == 0x36 || scancode == 0x2A) {
+		this->shift_pressed = true;
+		return;
+	}
+	
+	// Toggle the right character set based upon shift
+	uint8_t* chars = this->scancodes_set1;
+	if (this->shift_pressed) chars = this->scancodes_set1_upper;
+
+	// If we don't understand the scancode, just skip it
+	if (chars[scancode] == 0) return;
+
+	//Check top bit to see if key has been released
+	if ((scancode & 0x80) != 0) return;
+
+	Streams::stdin.append(chars[scancode]);
+}
+
+void ps2_driver::mouse_irq_handler(struct registers* r) {}
 void ps2_driver::irq_handler(struct registers* r) {}

@@ -10,6 +10,7 @@
 #include<interrupts.h>
 #include<kernel/drivers.h>
 #include<cxxabi.h>
+#include<kernel/devicetree.h>
 
 // DO NOT REMOVE
 extern "C" {
@@ -81,6 +82,7 @@ extern "C" void _start(void) {
 	//Drivers::dump_ps2_config();
 	Interrupts::init();
 	logfk(KERNEL, "Interrupt initialization complete\n");
+	Devices::dump_device_tree();
 
 //	Memory::Paging::test();
 //	Memory::Paging::test_operators();
