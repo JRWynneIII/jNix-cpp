@@ -2,7 +2,7 @@
 #include<cstddef>
 #include<stdlib.h>
 #include<kernel.h>
-#include<panic.h>
+#include<kernel/panic.h>
 #include<string.h>
 #include<stdio.h>
 

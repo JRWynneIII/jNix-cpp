@@ -1,5 +1,5 @@
 #include<cstdint>
-#include<interrupts.h>
+#include<kernel/interrupts.h>
 #include<kernel/devices.hpp>
 #include<vector.hpp>
 #include<kernel.h>

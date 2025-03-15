@@ -3,9 +3,9 @@
 #include<stdint.h>
 #include<stdlib.h>
 #include<kernel.h>
-#include<port.h>
-#include<panic.h>
-#include<interrupts.h>
+#include<kernel/port.h>
+#include<kernel/panic.h>
+#include<kernel/interrupts.h>
 
 #define PIC_READ_IRR 0x0a	//Raised IRQ
 #define PIC_READ_ISR 0x0b

@@ -6,8 +6,8 @@
 #include<stdlib.h>
 #include<kernel.h>
 #include<kernel/memory.h>
-#include<gdt.h>
-#include<interrupts.h>
+#include<kernel/gdt.h>
+#include<kernel/interrupts.h>
 #include<kernel/drivers.h>
 #include<cxxabi.h>
 #include<kernel/devicetree.h>

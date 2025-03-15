@@ -1,6 +1,6 @@
 #include<kernel.h>
 #include<stdint.h>
-#include<panic.h>
+#include<kernel/panic.h>
 #include<limine.h>
 #include<cstddef>
 #include<stdlib.h>

@@ -1,10 +1,10 @@
 #include<cstdint>
-#include<interrupts.h>
+#include<kernel/interrupts.h>
 #include<kernel/drivers.h>
 #include<kernel/devicetree.h>
 #include<kernel/driver/pit.hpp>
 #include<kernel.h>
-#include<port.h>
+#include<kernel/port.h>
 #include<kernel/devices.hpp>
 
 pit_driver::pit_driver() {

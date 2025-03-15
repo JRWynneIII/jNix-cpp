@@ -1,5 +1,5 @@
 #include<cstdint>
-#include<interrupts.h>
+#include<kernel/interrupts.h>
 #include<kernel/driver/ps2.hpp>
 #include<kernel/driver/pit.hpp>
 #include<kernel/drivers.h>
