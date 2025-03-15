@@ -1,6 +1,6 @@
 #pragma once
 #include<cstdint>
-#include<kernel/devices/devicetree.h>
+#include<kernel/devices/device_api.hpp>
 
 #define PS2_DATA_PORT 0x60
 #define PS2_STATUS_PORT 0x64

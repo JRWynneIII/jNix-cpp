@@ -8,9 +8,9 @@
 #include<kernel/memory.h>
 #include<kernel/gdt.h>
 #include<kernel/interrupts.h>
-#include<kernel/drivers.h>
+#include<kernel/drivers/driver_api.hpp>
 #include<cxxabi.h>
-#include<kernel/devices/devicetree.h>
+#include<kernel/devices/device_api.hpp>
 
 // DO NOT REMOVE
 extern "C" {

@@ -1,12 +1,12 @@
 #include<cstdint>
 #include<kernel/interrupts.h>
-#include<kernel/drivers.h>
+#include<kernel/drivers/driver_api.hpp>
 #include<kernel/drivers/driver.hpp>
 #include<kernel/streams.h>
 #include<kernel/port.h>
 #include<kernel/drivers/ps2.hpp>
 #include<kernel.h>
-#include<kernel/devices/devicetree.h>
+#include<kernel/devices/device_api.hpp>
 
 ps2_driver::ps2_driver() {
 	this->desc = PS2_DRIVER;

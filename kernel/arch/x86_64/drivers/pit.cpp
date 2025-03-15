@@ -1,7 +1,7 @@
 #include<cstdint>
 #include<kernel/interrupts.h>
-#include<kernel/drivers.h>
-#include<kernel/devices/devicetree.h>
+#include<kernel/drivers/driver_api.hpp>
+#include<kernel/devices/device_api.hpp>
 #include<kernel/drivers/pit.hpp>
 #include<kernel.h>
 #include<kernel/port.h>
