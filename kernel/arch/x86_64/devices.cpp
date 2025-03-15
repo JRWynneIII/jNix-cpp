@@ -1,6 +1,6 @@
 #include<cstdint>
 #include<kernel/interrupts.h>
-#include<kernel/devices.hpp>
+#include<kernel/devices/devices.hpp>
 #include<vector.hpp>
 #include<kernel.h>
 #include<kernel/drivers.h>

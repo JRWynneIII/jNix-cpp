@@ -1,11 +1,11 @@
 #include<cstdint>
 #include<kernel/interrupts.h>
 #include<kernel/drivers.h>
-#include<kernel/devicetree.h>
+#include<kernel/devices/devicetree.h>
 #include<kernel/driver/pit.hpp>
 #include<kernel.h>
 #include<kernel/port.h>
-#include<kernel/devices.hpp>
+#include<kernel/devices/devices.hpp>
 
 pit_driver::pit_driver() {
 	this->enabled = false;

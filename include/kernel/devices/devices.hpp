@@ -1,6 +1,6 @@
 #pragma once
+#include<kernel/driver/driver.hpp>
 #include<vector.hpp>
-#include<kernel/drivers/driver.hpp>
 
 typedef enum device_desc {
 	KEYBOARD,

@@ -10,7 +10,7 @@
 #include<kernel/interrupts.h>
 #include<kernel/drivers.h>
 #include<cxxabi.h>
-#include<kernel/devicetree.h>
+#include<kernel/devices/devicetree.h>
 
 // DO NOT REMOVE
 extern "C" {

@@ -6,7 +6,7 @@
 #include<kernel/port.h>
 #include<kernel/driver/ps2.hpp>
 #include<kernel.h>
-#include<kernel/devicetree.h>
+#include<kernel/devices/devicetree.h>
 
 ps2_driver::ps2_driver() {
 	this->desc = PS2_DRIVER;

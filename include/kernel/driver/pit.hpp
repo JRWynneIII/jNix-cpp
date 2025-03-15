@@ -1,6 +1,6 @@
 #pragma once
 #include<cstdint>
-#include<kernel/devicetree.h>
+#include<kernel/devices/devicetree.h>
 
 class pit_driver : public driver_t {
 private:
