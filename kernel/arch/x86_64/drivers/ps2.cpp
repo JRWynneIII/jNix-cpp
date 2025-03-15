@@ -1,10 +1,10 @@
 #include<cstdint>
 #include<kernel/interrupts.h>
 #include<kernel/drivers.h>
-#include<kernel/driver/driver.hpp>
+#include<kernel/drivers/driver.hpp>
 #include<kernel/streams.h>
 #include<kernel/port.h>
-#include<kernel/driver/ps2.hpp>
+#include<kernel/drivers/ps2.hpp>
 #include<kernel.h>
 #include<kernel/devices/devicetree.h>
 

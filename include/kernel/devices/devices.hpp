@@ -1,5 +1,5 @@
 #pragma once
-#include<kernel/driver/driver.hpp>
+#include<kernel/drivers/driver.hpp>
 #include<vector.hpp>
 
 typedef enum device_desc {

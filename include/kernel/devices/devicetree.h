@@ -1,6 +1,6 @@
 #pragma once
 #include<vector.hpp>
-#include<kernel/driver/driver.hpp>
+#include<kernel/drivers/driver.hpp>
 #include<kernel/devices/devices.hpp>
 
 namespace Devices {

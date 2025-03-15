@@ -1,10 +1,10 @@
 #include<cstdint>
 #include<kernel/interrupts.h>
-#include<kernel/driver/ps2.hpp>
-#include<kernel/driver/pit.hpp>
+#include<kernel/drivers/ps2.hpp>
+#include<kernel/drivers/pit.hpp>
 #include<kernel/drivers.h>
 #include<kernel.h>
-#include<kernel/driver/driver.hpp>
+#include<kernel/drivers/driver.hpp>
 #include<cstdint>
 #include<vector.hpp>
 

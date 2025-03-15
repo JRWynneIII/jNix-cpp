@@ -1,8 +1,8 @@
 #pragma once
 #include<cstdint>
-#include<kernel/driver/ps2.hpp>
-#include<kernel/driver/pit.hpp>
-#include<kernel/driver/driver.hpp>
+#include<kernel/drivers/ps2.hpp>
+#include<kernel/drivers/pit.hpp>
+#include<kernel/drivers/driver.hpp>
 
 namespace Drivers {
 	void init();
