@@ -1,0 +1,9 @@
+*.sw*
+*_todo*
+*.d
+*.o
+*.elf
+*.iso
+*freestanding*
+*limine*
+*flanterm*

@@ -7,6 +7,7 @@ typedef enum device_desc {
 	MOUSE,
 	BLOCKDEV,
 	CHARDEV,
+	TIMER,
 	UNKNOWN,
 } device_desc_t;
 

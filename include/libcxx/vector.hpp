@@ -48,6 +48,7 @@ public:
 	void push_back(T val) {
 		if (tail != nullptr) {
 			this->tail->set_next(new node<T>(val));
+			this->tail = this->tail->get_next();
 		} else {
 			this->head = new node<T>(val);
 			this->tail = this->head;

@@ -96,7 +96,8 @@ namespace Interrupts {
 		0,0,0,0,0,0,0,0
 	};
 
-	void install_handler(int irq, void (*handler)(struct registers* r)) {
+	//void install_handler(int irq, void (*handler)(struct registers* r)) {
+	void install_handler(int irq, void* handler) { 
 		irq_handlers[irq] = handler;
 	}
 
@@ -145,7 +146,6 @@ namespace Interrupts {
 		io_wait();
 
 		//Inform master of the adjacent PIC
-		// TODO: what is 4 and 2
 		outportb(PIC1_DATA, 4);
 		outportb(PIC2_DATA, 2);
 		io_wait();
@@ -158,8 +158,40 @@ namespace Interrupts {
 		//Restore masks
 		outportb(PIC1_DATA, m1);
 		outportb(PIC1_DATA, m2);
-		outportb(0x21,0xfd);
-		outportb(0xa1,0xff);
+
+		//Mask all
+		outportb(PIC1_DATA,0xff);
+		outportb(PIC2_DATA,0xff);
+	}
+
+	uint8_t get_mask(uint64_t irq) {
+		//Save current PIC masks
+		uint16_t port = PIC1_DATA;
+		if (irq > 8) port = PIC2_DATA;
+
+		return inportb(port);
+	}
+
+	void write_mask(uint64_t irq, uint8_t mask) {
+		//Save current PIC masks
+		__asm__ __volatile__("cli");
+		uint8_t port = PIC1_DATA;
+		if (irq > 8) port = PIC2_DATA;
+
+		outportb(PIC1_DATA, mask);
+		__asm__ __volatile__("sti");
+	}
+
+	void mask_irq(uint64_t irq) {
+		uint8_t cur_mask = get_mask(irq);
+		if (irq > 8 ) irq -= 8;
+		write_mask(irq, cur_mask | (1<<irq));
+	}
+
+	void unmask_irq(uint64_t irq) {
+		uint8_t cur_mask = get_mask(irq);
+		if (irq > 8 ) irq -= 8;
+		write_mask(irq, (cur_mask & ~(1<<irq)));
 	}
 
 	void init() {

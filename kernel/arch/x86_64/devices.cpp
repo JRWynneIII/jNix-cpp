@@ -1,3 +1,5 @@
+#include<cstdint>
+#include<interrupts.h>
 #include<kernel/devices.hpp>
 #include<vector.hpp>
 #include<kernel.h>
@@ -60,7 +62,7 @@ namespace Devices {
 		vector<Device*>* devs = new vector<Device*>();
 		for (int i = 0; i < device_tree().length(); i++) {
 			driver_t* d = device_tree().at(i)->get_driver();
-			if (d->get_name() == driver_name) devs->push_back(device_tree().at(i));
+			if (strcmp(d->get_name(), driver_name)) devs->push_back(device_tree().at(i));
 		}
 		return devs;
 	}
@@ -69,10 +71,11 @@ namespace Devices {
 	Device* get_device_by_path(char* path) {
 		for (int i = 0; i < device_tree().length(); i++) {
 			Device* d = device_tree().at(i);
-			if (d->get_path() == path) {
+			if (strcmp(d->get_path(), path)) {
 				return d;
 			}
 		}
+		return nullptr;
 	}
 }
 

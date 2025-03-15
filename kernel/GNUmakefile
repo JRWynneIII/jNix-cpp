@@ -56,6 +56,7 @@ override CFLAGS +=       \
     -I. \
     -I ../include \
     -I ./libc/include \
+    -I ./libk/include \
     -I ../include/libcxx \
     -I ./freestanding-c/x86_64/include \
     -I ./freestanding-cxx/x86_64/include \

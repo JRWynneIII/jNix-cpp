@@ -117,7 +117,6 @@ private:
 		0, //Allotherkeysareundefined
 	};
 	bool shift_pressed = false;
-	bool enabled = false;
 	bool port1_enabled = false;
 	ps2_ident_t port1_device;
 	bool port2_enabled = false;
@@ -144,7 +143,7 @@ public:
 	ps2_driver();
 	ps2_ident_t get_port1_device();
 	ps2_ident_t get_port2_device();
-	virtual void install(uint64_t idx);
+	virtual void install();
 	virtual void irq_handler(struct registers* r);
 	void keyboard_irq_handler(struct registers* r);
 	void mouse_irq_handler(struct registers* r);

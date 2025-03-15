@@ -1,13 +1,16 @@
+#include<cstdint>
+#include<interrupts.h>
 #include<kernel/drivers.h>
+#include<kernel/driver/driver.hpp>
 #include<kernel/streams.h>
 #include<port.h>
 #include<kernel/driver/ps2.hpp>
-#include<cstdint>
 #include<kernel.h>
 #include<kernel/devicetree.h>
-#include<interrupts.h>
 
-ps2_driver::ps2_driver() {}
+ps2_driver::ps2_driver() {
+	this->desc = PS2_DRIVER;
+}
 
 void ps2_driver::set_config(ps2_config_t config) {
 	//Wait for controller to be ready
@@ -289,10 +292,15 @@ uint8_t ps2_driver::poll(uint8_t port, uint8_t value, uint64_t timeout) {
 }
 
 void ps2_kb_driver_wrapper(struct registers* r) {
-	Drivers::ps2_driver_ptr->keyboard_irq_handler(r);
+	ps2_driver* d = Drivers::get_ps2_driver();
+	if (d != nullptr) {
+		d->keyboard_irq_handler(r);
+	} else {
+		logfk(ERROR, "Can not find ps2 driver!\n");
+	}
 }
 
-void ps2_driver::install(uint64_t idx) {
+void ps2_driver::install() {
 	logfk(KERNEL, "Installing PS2 controller driver\n");
 	//Drivers::ps2_driver_idx = idx;
 	this->set_name("ps2");
@@ -349,7 +357,10 @@ void ps2_driver::install(uint64_t idx) {
 
 	if (this->port1_enabled) {
 		Interrupts::install_handler(this->kb_irq, ps2_kb_driver_wrapper);
+		// Unmask the irq on the PIC
+		this->enable(1);
 	}
+
 }
 
 void ps2_driver::dump_config() {
@@ -408,7 +419,7 @@ bool ps2_driver::self_test() {
 		return false;
 	}
 
-	logfk(ERROR, "PS2 controller passed self test! Resp: %d\n", status);
+	logfk(KERNEL, "PS2 controller passed self test! Resp: %d\n", status);
 	return true;
 	
 }

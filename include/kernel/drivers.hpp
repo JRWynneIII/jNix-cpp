@@ -7,5 +7,6 @@ namespace Drivers {
 	void init();
 	void load_drivers();
 	void dump_ps2_config();
-	extern ps2_driver* ps2_driver_ptr;
+	pit_driver* get_timer_driver();
+	ps2_driver* get_ps2_driver();
 }

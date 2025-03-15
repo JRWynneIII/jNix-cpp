@@ -78,22 +78,24 @@ extern "C" void _start(void) {
 	logfk(KERNEL, "Loading drivers...\n");
 	Drivers::load_drivers();
 	logfk(KERNEL, "Initializing drivers...\n");
-	Drivers::init();
-	//Drivers::dump_ps2_config();
 	Interrupts::init();
 	logfk(KERNEL, "Interrupt initialization complete\n");
+	Drivers::init();
 	Devices::dump_device_tree();
 
-//	Memory::Paging::test();
-//	Memory::Paging::test_operators();
-//	Memory::Paging::ptr_t_test();
 	for(;;) {
-	//	Drivers::dump_ps2_config();
 		char c = getch();
 		printfk("%c",c);
+		if (c == '\n') {
+			Device* timer = Devices::get_device_by_path("pit.programmable_interrupt_timer.1");
+			if (timer != nullptr) {
+				pit_driver* driver = static_cast<pit_driver*>(timer->get_driver());
+				printfk("Cur ticks: %d\n", driver->get_ticks());
+			} else {
+				logfk(ERROR, "Could not find timer\n");
+			}
+		}
 	}
-
-
 
     	halt();
 }
