@@ -1,7 +1,7 @@
 #pragma once
 #include<vector.hpp>
 #include<kernel/drivers/driver.hpp>
-#include<kernel/devices/devices.hpp>
+#include<kernel/devices/device.hpp>
 
 namespace Devices {
 	vector<Device*>& device_tree();

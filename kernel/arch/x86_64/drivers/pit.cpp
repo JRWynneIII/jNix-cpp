@@ -5,7 +5,7 @@
 #include<kernel/drivers/pit.hpp>
 #include<kernel.h>
 #include<kernel/port.h>
-#include<kernel/devices/devices.hpp>
+#include<kernel/devices/device.hpp>
 
 pit_driver::pit_driver() {
 	this->enabled = false;
