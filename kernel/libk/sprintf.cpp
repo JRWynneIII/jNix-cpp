@@ -61,6 +61,7 @@ char* sprintf(char* format...) {
 		}
 		cur++;
 	}
+	ret[ret_idx] = '\0';
 	va_end(args);
 	return ret;
 }

@@ -9,6 +9,8 @@
 #include <flanterm/flanterm.h>
 #include <flanterm/backends/fb.h>
 #include <kernel/streams.h>
+#include<vector.hpp>
+#include<string.hpp>
 
 namespace {
 	__attribute__((used, section(".limine_requests")))
@@ -63,8 +65,20 @@ namespace FrameBuffer {
 		flanterm_write(ft_ctx, msg, length);
 	}
 }
-	
 
+namespace Kernel {
+	vector<String>& kernel_logs() {
+		static vector<String>* l = new vector<String>();
+		return *l;
+	}
+
+	void append_log(String s) {
+		String cur = s; 
+		cur.replace('\n',' ');
+		kernel_logs().push_back(cur);
+	}
+}
+	
 void logk(char* msg, enum LOGLEVEL level) {
 	if (msg != nullptr) {
 		switch(level) {

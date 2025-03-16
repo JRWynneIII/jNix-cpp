@@ -137,6 +137,7 @@ namespace Memory {
 	extern uint64_t kernel_virtual_addr_base;
 	extern mem_region usable_memory_regions[7];
 	namespace Paging {
+		void dump_slab_list();
 		slab_t* get_slab_head();
 		void kfree(void* vaddr);
 		void* kalloc(uint64_t objsize, uint64_t num);
