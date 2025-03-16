@@ -2,6 +2,8 @@
 
 template<typename T>
 class node {
+	template<typename U>
+	friend class vIterator;
 private:
 	T value;
 	node<T>* next;

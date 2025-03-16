@@ -33,7 +33,6 @@ namespace Devices {
 	}
 
 	void add_device(driver_t* driver, device_desc_t desc, char* name) {
-		//TODO: Change name so that it is lowercase and ' ' is _
 		char* path = sprintf("%s.%s.%d", driver->get_name(), name, get_new_subsystem_idx(driver));
 		path = format_path(path);
 		Device* dev = new Device(driver, desc, path);
@@ -42,26 +41,26 @@ namespace Devices {
 
 	void dump_device_tree() {
 		logfk(KERNEL, "Device Tree:\n");
-		for (int i = 0; i < device_tree().length() ; i++) {
-			Device* d = device_tree().at(i);
+		for (auto d : device_tree() ) {
 			printfk("\tDevice: %s, %d, %s\n", d->get_driver()->get_name(), d->get_device_type(), d->get_path());
 		}
 	}
 
 	void rm_device(char* path) {
-		for (int i = 0; i < device_tree().length(); i++) {
-			Device* d = device_tree().at(i);
+		int i = 0;
+		for (auto d : device_tree() ) {
 			if (d->get_path() == path) {
 				device_tree().del(i);
 				break;
 			}
+			i++;
 		}
 	}
 
 	vector<Device*>* get_devices_by_driver(char* driver_name) {
 		vector<Device*>* devs = new vector<Device*>();
-		for (int i = 0; i < device_tree().length(); i++) {
-			driver_t* d = device_tree().at(i)->get_driver();
+		for (auto i : device_tree() ) {
+			auto d = i->get_driver();
 			if (strcmp(d->get_name(), driver_name)) devs->push_back(device_tree().at(i));
 		}
 		return devs;
@@ -69,8 +68,7 @@ namespace Devices {
 
 	//Each device will have a 'path' like ps2.keyboard.1, usb.flash.0, etc
 	Device* get_device_by_path(char* path) {
-		for (int i = 0; i < device_tree().length(); i++) {
-			Device* d = device_tree().at(i);
+		for (auto d : device_tree() ) {
 			if (strcmp(d->get_path(), path)) {
 				return d;
 			}

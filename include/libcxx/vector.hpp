@@ -2,6 +2,7 @@
 #include<cstdint>
 #include<cstddef>
 #include<node.hpp>
+#include<viterator.hpp>
 
 template<typename T>
 class vector {
@@ -39,6 +40,9 @@ public:
 		this->size = size;
 		this->tail = prev;
 	}
+
+	vIterator<T> begin() { return vIterator<T>(this->head); }
+	vIterator<T> end() { return vIterator<T>(nullptr); }
 	
 	//template<typename T>
 	//vector::vector<T>(vector<T> const& rhs): head(rhs.head), tail(rhs.tail), size(rhs.size) {
