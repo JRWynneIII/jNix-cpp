@@ -17,6 +17,7 @@ public:
 	String Name;
 	Command() {}
 	Command(String s) : Name(s) {}
+	Command(String* s) : Name(*s) {}
 	String get_name() { return this->Name; }
 	virtual void run() {
 		logfk(INFO, "%s\n", Name.cstring());
@@ -27,6 +28,7 @@ class TimerShowCommand : public Command {
 public:
 	TimerShowCommand() {}
 	TimerShowCommand(String s) : Command(s) {}
+	TimerShowCommand(String* s) : Command(*s) {}
 	void run() {
 		Device* timer = Devices::get_device_by_path("pit.programmable_interrupt_timer.1");
 		if (timer != nullptr) {
@@ -42,6 +44,7 @@ class DeviceTreeCommand : public Command {
 public:
 	DeviceTreeCommand() {}
 	DeviceTreeCommand(String s) : Command(s) {}
+	DeviceTreeCommand(String* s) : Command(*s) {}
 	void run() {
 		Devices::dump_device_tree();
 	}
@@ -51,6 +54,7 @@ class SlabListCommand : public Command {
 public:
 	SlabListCommand() {}
 	SlabListCommand(String s) : Command(s) {}
+	SlabListCommand(String* s) : Command(*s) {}
 	void run() {
 		Memory::Paging::dump_slab_list();
 	}
@@ -60,11 +64,13 @@ class LogListCommand : public Command {
 public:
 	LogListCommand() {}
 	LogListCommand(String s) : Command(s) {}
+	LogListCommand(String* s) : Command(*s) {}
 	void run() {
 		int idx = 0;
 		//Fake pagination
 		for (auto i : Kernel::kernel_logs()) {
-			printfk("%s\n", i.cstring());
+			printk(i.cstring());
+			printk("\n");
 			if (idx >= 50) {
 				//Wait for a key press
 				getch();
@@ -82,7 +88,7 @@ namespace Monitor {
 	}
 	//TODO: replace this with cin/kin
 	String get_command() {
-		String ret;
+		String ret = String();
 		char c = getch();
 		while(c != '\n') {
 			printfk("%c", c);
@@ -94,17 +100,20 @@ namespace Monitor {
 	}
 
 	void start() {
-		cmd_list().push_back(new Command(String("test")));
-		cmd_list().push_back(new TimerShowCommand(String("timer")));
-		cmd_list().push_back(new DeviceTreeCommand(String("devicetree")));
-		cmd_list().push_back(new SlabListCommand(String("slablist")));
-		cmd_list().push_back(new LogListCommand(String("loglist")));
+		cmd_list().push_back(new Command(new String("test")));
+		cmd_list().push_back(new TimerShowCommand(new String("timer")));
+		cmd_list().push_back(new DeviceTreeCommand(new String("devicetree")));
+		cmd_list().push_back(new SlabListCommand(new String("slablist")));
+		cmd_list().push_back(new LogListCommand(new String("loglist")));
 		while(true) {
 			printfk("(monitor) ");
 			String cmd = get_command();
-			for (auto c : cmd_list() ) {
-				if (c->get_name() == cmd) {
-					c->run();
+		//	//TODO: fix this; shouldn't have to check length here. I think operator== is busted
+			if (cmd.length() > 0) {
+				for (auto c : cmd_list() ) {
+					if (c->get_name() == cmd) {
+						c->run();
+					}
 				}
 			}
 		}

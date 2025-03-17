@@ -7,19 +7,22 @@ private:
 	uint64_t size;
 public:
 	String() {
-		cstr = new char[1];
-		cstr[0] = '\0';
+		this->cstr = new char[1];
+		this->cstr[0] = '\0';
 		size = 0;
 	}
 
+	~String() {
+		if (this->cstr != nullptr)
+			delete this->cstr;
+	}
+
 	String(char* s) : cstr(s), size(strlen(s)) {}
-//	String(const String& s) {
-//		//delete this->cstr;
-//		if (this->cstr != nullptr) delete this->cstr;
-//		this->cstr = new char[s.length()+1];
-//		this->size = s.length();
-//		memcpy(this->cstr, s.cstring(), s.length()+1);
-//	}
+	String(const String& s) {
+		this->cstr = new char[strlen(s.cstring())+1];
+		this->size = s.length();
+		memcpy(this->cstr, s.cstring(), s.length()+1);
+	}
 
 	uint64_t length() { return this->size; }
 
@@ -28,15 +31,15 @@ public:
 	bool operator==(const String& rhs) { return strcmp(this->cstr, rhs.cstring()); }
 	bool operator!=(const String& rhs) { return !strcmp(this->cstr, rhs.cstring()); }
 
-//	String& operator=(String s) {
-//		if (this->cstr != nullptr) {
-//			delete this->cstr;
-//		}
-//		this->cstr = new char[s.length()+1];
-//		memcpy(this->cstr, s.cstring(), s.length()+1);
-//		this->size = s.length();
-//		return *this;
-//	}
+	String& operator=(String s) {
+		if (this->cstr != nullptr) {
+			delete this->cstr;
+		}
+		this->cstr = new char[s.length()+1];
+		memcpy(this->cstr, s.cstring(), s.length()+1);
+		this->size = s.length();
+		return *this;
+	}
 
 	String& operator=(char* s) {
 		if (this->cstr != nullptr) delete this->cstr;
@@ -46,13 +49,19 @@ public:
 		return *this;
 	}
 
-	void replace(char old, char newchar) {
-		char* cur = this->cstr;
-		while(*cur != '\0') {
-			if (*cur == old) *cur = newchar;
-			cur++;
+	void trim() {
+		uint64_t last_idx = this->size;
+		int i = -1;
+		for (i = last_idx; i >= 0; i--) {
+			if (this->cstr[i] != '\n') break;
 		}
-
+		
+		this->cstr[i++] = '\0';
+		char* buf = new char[i];
+		memcpy(buf, this->cstr, i);
+		this->size = strlen(this->cstr);
+		delete this->cstr;
+		this->cstr = buf;
 	}
 
 	String& operator+=(char* s) {

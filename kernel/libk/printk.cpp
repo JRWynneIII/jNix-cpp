@@ -74,7 +74,8 @@ namespace Kernel {
 
 	void append_log(String s) {
 		String cur = s; 
-		cur.replace('\n',' ');
+		//TODO: does not work; fix
+		cur.trim();
 		kernel_logs().push_back(cur);
 	}
 }
