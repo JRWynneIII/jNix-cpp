@@ -67,7 +67,7 @@ namespace Memory {
 						break;
 					case LIMINE_MEMMAP_ACPI_RECLAIMABLE: 
 						reclaimable_mem_bytes += entries[i]->length;
-						set_usable_mem_region(i, entry->base, entry->length);
+						//set_usable_mem_region(i, entry->base, entry->length);
 						//log_memory_region(i, entry->base, entry->length);
 						logfk(KERNEL, "Region %d is reclaimable\n", i);
 						break;
@@ -79,7 +79,7 @@ namespace Memory {
 						break;
 					case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE:
 						reclaimable_mem_bytes += entries[i]->length;
-						set_usable_mem_region(i, entry->base, entry->length);
+						//set_usable_mem_region(i, entry->base, entry->length);
 						logfk(KERNEL, "Region %d is reclaimable\n", i);
 						break;
 					case LIMINE_MEMMAP_RESERVED:

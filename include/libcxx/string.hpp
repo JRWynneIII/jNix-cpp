@@ -9,11 +9,20 @@ private:
 public:
 	String() : cstr(nullptr), size(0), len(0) {}
 
-	String(char* s) : cstr(s), len(strlen(s)), size(strlen(s) + 1) {}
+	String(char* s) {
+		this->len = strlen(s);
+		this->size = this->len + 1;
+		this->cstr = new char[this->size];
+		memcpy(this->cstr, s, this->size);
+	}
 
 	//Copy constructor
-	String(const String& s) : cstr(new char[s.size]), size(s.size), len(s.len) {
-		memcpy(this->cstr, s.cstr, s.size);
+	String(const String& s) { //: cstr(new char[s.size]), size(s.size), len(s.len) {
+		this->len = strlen(s.cstr);
+		this->size = this->len + 1;
+		this->cstr = new char[this->size];
+		memcpy(this->cstr, s.cstr, this->size);
+		//memcpy(this->cstr, s.cstr, s.size);
 	}
 
 	~String() {

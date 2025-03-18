@@ -41,6 +41,16 @@ namespace {
 	};
 }
 
+//TODO: Fix this such that we have a large enough stack here
+//namespace {
+//	__attribute__((used, section(".limine_requests")))
+//	static volatile struct limine_stack_size_request stack_req = {
+//		.id = LIMINE_STACK_SIZE_REQUEST,
+//		.revision = 0,
+//		.stack_size = 4096
+//	};
+//}
+
 
 // The following will be our kernel's entry point.
 extern "C" void _start(void) {
@@ -82,7 +92,7 @@ extern "C" void _start(void) {
 	Devices::dump_device_tree();
 	int64_t boottime = boot_time_req.response->boot_time;
 	Kernel::Log(KERNEL, "Boot time: %d\n", boottime);
-	Memory::Paging::dump_slab_list();
+	//Memory::Paging::dump_slab_list();
 	//Memory::Paging::test();
 
 	Kernel::Log(KERNEL, "Starting kernel-space monitor\n\n\n\n\n\n");
