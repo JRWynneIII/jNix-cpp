@@ -55,9 +55,6 @@ extern "C" void _start(void) {
 		logfk(ERROR, "Could not get boot time from Limine/RTC");
 	}
 
-	int64_t boottime = boot_time_req.response->boot_time;
-	logfk(KERNEL, "Boot time: %d\n", boottime);
-
 	logfk(KERNEL, "Loading new GDT\n");
 	GDT::init();
 	logfk(KERNEL, "GDT initialization complete\n");
@@ -69,21 +66,26 @@ extern "C" void _start(void) {
 	logfk(KERNEL, "Initializing paging and memory management\n");
 //	Interrupts::test();
 	Memory::Paging::init();
-	logfk(KERNEL, "Paging and memory management intialization complete\n");
+	Kernel::Log(KERNEL, "Paging and memory management intialization complete\n");
 	
 	// Run our global constructors
 	for (std::size_t i = 0; &__init_array[i] != __init_array_end; i++) {
 	    __init_array[i]();
 	}
 
-	logfk(KERNEL, "Loading drivers...\n");
+	Kernel::Log(KERNEL, "Loading drivers...\n");
 	Drivers::load_drivers();
-	logfk(KERNEL, "Initializing drivers...\n");
+	Kernel::Log(KERNEL, "Initializing drivers...\n");
 	Interrupts::init();
-	logfk(KERNEL, "Interrupt initialization complete\n");
+	Kernel::Log(KERNEL, "Interrupt initialization complete\n");
 	Drivers::init();
 	Devices::dump_device_tree();
-	logfk(KERNEL, "Starting kernel-space monitor\n\n\n\n\n\n");
+	int64_t boottime = boot_time_req.response->boot_time;
+	Kernel::Log(KERNEL, "Boot time: %d\n", boottime);
+	Memory::Paging::dump_slab_list();
+	//Memory::Paging::test();
+
+	Kernel::Log(KERNEL, "Starting kernel-space monitor\n\n\n\n\n\n");
 	printfk("Welcome to jnix!\n");
 	Monitor::start();
 

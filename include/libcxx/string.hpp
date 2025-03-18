@@ -4,97 +4,114 @@
 class String {
 private:
 	char* cstr;
-	uint64_t size;
+	uint64_t size; //strlen+1
+	uint64_t len; //strlen
 public:
-	String() {
-		this->cstr = new char[1];
-		this->cstr[0] = '\0';
-		size = 0;
+	String() : cstr(nullptr), size(0), len(0) {}
+
+	String(char* s) : cstr(s), len(strlen(s)), size(strlen(s) + 1) {}
+
+	//Copy constructor
+	String(const String& s) : cstr(new char[s.size]), size(s.size), len(s.len) {
+		memcpy(this->cstr, s.cstr, s.size);
 	}
 
 	~String() {
 		if (this->cstr != nullptr)
 			delete this->cstr;
+		this->size = 0;
+		this->len = 0;
 	}
 
-	String(char* s) : cstr(s), size(strlen(s)) {}
-	String(const String& s) {
-		this->cstr = new char[strlen(s.cstring())+1];
-		this->size = s.length();
-		memcpy(this->cstr, s.cstring(), s.length()+1);
-	}
-
-	uint64_t length() { return this->size; }
+	uint64_t length() { return this->len; }
 
 	char* cstring() { return this->cstr; }
 
-	bool operator==(const String& rhs) { return strcmp(this->cstr, rhs.cstring()); }
-	bool operator!=(const String& rhs) { return !strcmp(this->cstr, rhs.cstring()); }
+	bool operator==(const String& rhs) { 
+		return strcmp(this->cstr, rhs.cstr); 
+	}
 
-	String& operator=(String s) {
-		if (this->cstr != nullptr) {
-			delete this->cstr;
-		}
-		this->cstr = new char[s.length()+1];
-		memcpy(this->cstr, s.cstring(), s.length()+1);
-		this->size = s.length();
+	bool operator!=(const String& rhs) { 
+		bool ret = strcmp(this->cstr, rhs.cstr); 
+		return !ret;
+	}
+
+	//String = String
+	String& operator=(const String& s) {
+		if (this->cstr != nullptr) delete this->cstr;
+
+		this->cstr = new char[s.size];
+		memcpy(this->cstr, s.cstring(), s.size);
+
+		this->size = s.size;
+		this->len = s.len;
+
 		return *this;
 	}
 
+	// String = char*
 	String& operator=(char* s) {
 		if (this->cstr != nullptr) delete this->cstr;
-		this->cstr = new char[strlen(s)+1];
-		memcpy(this->cstr, s, strlen(s)+1);
-		this->size = strlen(s);
+
+		this->len = strlen(s);
+		this->size = this->len + 1;
+
+		this->cstr = new char[this->size];
+		memcpy(this->cstr, s, this->size);
+
 		return *this;
 	}
 
 	void trim() {
-		uint64_t last_idx = this->size;
-		int i = -1;
-		for (i = last_idx; i >= 0; i--) {
-			if (this->cstr[i] != '\n') break;
+		// {"test", 4, 5}; [4] == '\0'; [5] == undef; [3] == 't'
+		uint64_t last_idx = this->len-1;
+
+		int idx = 0;
+		for (idx = last_idx; idx >= 0; idx--) {
+			if (this->cstr[idx] != '\n') break;
 		}
+
+		this->len = idx+1;
+		this->size = this->len + 1;
 		
-		this->cstr[i++] = '\0';
-		char* buf = new char[i];
-		memcpy(buf, this->cstr, i);
-		this->size = strlen(this->cstr);
-		delete this->cstr;
+		char* buf = new char[this->size];
+		memcpy(buf, this->cstr, this->len);
+		buf[this->size-1] = '\0';
+
+		if (this->cstr != nullptr) delete this->cstr;
+
 		this->cstr = buf;
 	}
 
 	String& operator+=(char* s) {
-		uint64_t buflen = this->size + strlen(s) + 1;
+		//strlen(this) + strlen(s) + sizeof('\0')
+		uint64_t buflen = this->len + strlen(s) + 1;
 		char* buf = new char[buflen];
-		int i = 0;
-		char* cur = this->cstr;
-		memcpy(buf, this->cstr, strlen(this->cstr));
-		memcpy(&(buf[strlen(this->cstr)]), s, strlen(s)+1);
+
+		memcpy(buf, this->cstr, this->len);
+		memcpy(&(buf[this->len]), s, strlen(s));
+
+		//Append null terminator
 		buf[buflen-1] = '\0';
-		//delete this->cstr;
+		
 		if (this->cstr != nullptr) delete this->cstr;
 		this->cstr = buf;
-		this->size = strlen(buf);
+		this->len = buflen - 1;
+		this->size = this->len + 1;
 	}
 
 	String& operator+=(char c) {
 		// +1 for new char, +1 for \0
-		uint64_t buflen = this->size + 2;
-		char* buf = new char[buflen];
-		int i = 0;
-		char* cur = this->cstr;
-		while(*cur != '\0') {
-			buf[i] = *cur;
-			i++;
-			cur++;
-		}
+		uint64_t buflen = this->len + 1 + 1;
 
+		char* buf = new char[buflen];
+		memcpy(buf, this->cstr, this->len);
 		buf[buflen-2] = c;
 		buf[buflen-1] = '\0';
-		//delete this->cstr;
+
 		if (this->cstr != nullptr) delete this->cstr;
 		this->cstr = buf;
-		this->size = strlen(buf);
+		this->len += 1;
+		this->size += 1;
 	}
 };

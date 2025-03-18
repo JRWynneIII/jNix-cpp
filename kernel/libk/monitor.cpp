@@ -14,21 +14,21 @@
 
 class Command {
 public:
-	String Name;
+	char* Name;
 	Command() {}
-	Command(String s) : Name(s) {}
-	Command(String* s) : Name(*s) {}
-	String get_name() { return this->Name; }
+	Command(char* s) : Name(s) {}
+	//Command(String* s) : Name(*s) {}
+	char* get_name() { return this->Name; }
 	virtual void run() {
-		logfk(INFO, "%s\n", Name.cstring());
+		logfk(INFO, "%s\n", Name);
 	}
 };
 
 class TimerShowCommand : public Command {
 public:
 	TimerShowCommand() {}
-	TimerShowCommand(String s) : Command(s) {}
-	TimerShowCommand(String* s) : Command(*s) {}
+	TimerShowCommand(char* s) : Command(s) {}
+	//TimerShowCommand(String* s) : Command(*s) {}
 	void run() {
 		Device* timer = Devices::get_device_by_path("pit.programmable_interrupt_timer.1");
 		if (timer != nullptr) {
@@ -43,8 +43,8 @@ public:
 class DeviceTreeCommand : public Command {
 public:
 	DeviceTreeCommand() {}
-	DeviceTreeCommand(String s) : Command(s) {}
-	DeviceTreeCommand(String* s) : Command(*s) {}
+	DeviceTreeCommand(char* s) : Command(s) {}
+	//DeviceTreeCommand(String* s) : Command(*s) {}
 	void run() {
 		Devices::dump_device_tree();
 	}
@@ -53,8 +53,8 @@ public:
 class SlabListCommand : public Command {
 public:
 	SlabListCommand() {}
-	SlabListCommand(String s) : Command(s) {}
-	SlabListCommand(String* s) : Command(*s) {}
+	SlabListCommand(char* s) : Command(s) {}
+	//SlabListCommand(String* s) : Command(*s) {}
 	void run() {
 		Memory::Paging::dump_slab_list();
 	}
@@ -63,8 +63,8 @@ public:
 class LogListCommand : public Command {
 public:
 	LogListCommand() {}
-	LogListCommand(String s) : Command(s) {}
-	LogListCommand(String* s) : Command(*s) {}
+	LogListCommand(char* s) : Command(s) {}
+	//LogListCommand(String* s) : Command(*s) {}
 	void run() {
 		int idx = 0;
 		//Fake pagination
@@ -87,12 +87,12 @@ namespace Monitor {
 		return *cmdlist;
 	}
 	//TODO: replace this with cin/kin
-	String get_command() {
-		String ret = String();
+	vector<char>* get_command() {
+		vector<char>* ret = new vector<char>();
 		char c = getch();
 		while(c != '\n') {
 			printfk("%c", c);
-			ret += c;
+			ret->push_back(c);
 			c = getch();
 		}
 		printfk("\n");
@@ -100,22 +100,30 @@ namespace Monitor {
 	}
 
 	void start() {
-		cmd_list().push_back(new Command(new String("test")));
-		cmd_list().push_back(new TimerShowCommand(new String("timer")));
-		cmd_list().push_back(new DeviceTreeCommand(new String("devicetree")));
-		cmd_list().push_back(new SlabListCommand(new String("slablist")));
-		cmd_list().push_back(new LogListCommand(new String("loglist")));
+		cmd_list().push_back(new Command("test"));
+		cmd_list().push_back(new TimerShowCommand("timer"));
+		cmd_list().push_back(new DeviceTreeCommand("devicetree"));
+		cmd_list().push_back(new SlabListCommand("slablist"));
+		cmd_list().push_back(new LogListCommand("loglist"));
 		while(true) {
 			printfk("(monitor) ");
-			String cmd = get_command();
+			vector<char>* cmd = get_command();
+			char* str = new char[cmd->length()];
+			int idx=0;
+			for ( auto c : *cmd ) { 
+				str[idx] = c;
+				idx++;
+			}
 		//	//TODO: fix this; shouldn't have to check length here. I think operator== is busted
-			if (cmd.length() > 0) {
+			if (cmd->length() > 0) {
 				for (auto c : cmd_list() ) {
-					if (c->get_name() == cmd) {
+					if (strcmp(c->get_name(), str)) {
 						c->run();
 					}
 				}
 			}
+			delete cmd;
+			delete str;
 		}
 	}
 }

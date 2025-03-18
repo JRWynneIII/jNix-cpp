@@ -534,7 +534,7 @@ void ps2_driver::keyboard_irq_handler(struct registers* r) {
 	//Check top bit to see if key has been released
 	if ((scancode & 0x80) != 0) return;
 
-	Streams::stdin.append(chars[scancode]);
+	Streams::stdin().push_back(chars[scancode]);
 }
 
 void ps2_driver::mouse_irq_handler(struct registers* r) {}

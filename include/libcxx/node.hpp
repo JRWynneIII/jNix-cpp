@@ -28,8 +28,10 @@ public:
 	
 	~node() {
 		//Remove from list and link neighbors
-		this->next->set_prev(this->prev);
-		this->prev->set_next(this->next);
+		if (this->next != nullptr)
+			this->next->set_prev(this->prev);
+		if (this->prev != nullptr)
+			this->prev->set_next(this->next);
 	}
 	
 	node<T>* get_next() { return this->next; }

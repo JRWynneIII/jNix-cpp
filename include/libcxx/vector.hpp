@@ -60,7 +60,23 @@ public:
 		this->size++;
 	}
 	
-	T pop() {
+	T pop_head() {
+		T ret = this->head->get_value();
+		node<T>* new_head = head->get_next();
+		delete this->head;
+		if (this->head == this->tail) {
+			this->tail = new_head;
+		}
+		this->head = new_head;
+		this->size--;
+		return ret;
+	}
+	
+	T peek_head() {
+		return this->head->get_value();
+	}
+
+	T pop_tail() {
 		T ret = this->tail->get_value();
 		node<T>* new_tail = tail->get_prev();
 		delete this->tail;
@@ -68,7 +84,7 @@ public:
 		return ret;
 	}
 	
-	T peek() {
+	T peek_tail() {
 		return this->tail->get_value();
 	}
 	
