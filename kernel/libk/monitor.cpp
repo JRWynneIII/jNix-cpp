@@ -16,8 +16,8 @@ class Command {
 public:
 	String Name;
 	Command() {}
-	Command(String s) : Name(s) {}
-	Command(String* s) : Name(*s) {}
+	//Command(String s) : Name(s) {}
+	Command(char* s) : Name(String(s)) {}
 	String get_name() { return this->Name; }
 	virtual void run() {
 		logfk(INFO, "%s\n", Name.cstring());
@@ -27,8 +27,8 @@ public:
 class TimerShowCommand : public Command {
 public:
 	TimerShowCommand() {}
-	TimerShowCommand(String s) : Command(s) {}
-	TimerShowCommand(String* s) : Command(*s) {}
+	//TimerShowCommand(String s) : Command(s) {}
+	TimerShowCommand(char* s) : Command(s) {}
 	void run() {
 		Device* timer = Devices::get_device_by_path("pit.programmable_interrupt_timer.1");
 		if (timer != nullptr) {
@@ -43,8 +43,8 @@ public:
 class DeviceTreeCommand : public Command {
 public:
 	DeviceTreeCommand() {}
-	DeviceTreeCommand(String s) : Command(s) {}
-	DeviceTreeCommand(String* s) : Command(*s) {}
+	//DeviceTreeCommand(String s) : Command(s) {}
+	DeviceTreeCommand(char* s) : Command(s) {}
 	void run() {
 		Devices::dump_device_tree();
 	}
@@ -53,8 +53,8 @@ public:
 class SlabListCommand : public Command {
 public:
 	SlabListCommand() {}
-	SlabListCommand(String s) : Command(s) {}
-	SlabListCommand(String* s) : Command(*s) {}
+	//SlabListCommand(String s) : Command(s) {}
+	SlabListCommand(char* s) : Command(s) {}
 	void run() {
 		Memory::Paging::dump_slab_list();
 	}
@@ -63,8 +63,8 @@ public:
 class LogListCommand : public Command {
 public:
 	LogListCommand() {}
-	LogListCommand(String s) : Command(s) {}
-	LogListCommand(String* s) : Command(*s) {}
+	//LogListCommand(String s) : Command(s) {}
+	LogListCommand(char* s) : Command(s) {}
 	void run() {
 		int idx = 0;
 		//Fake pagination
@@ -100,11 +100,18 @@ namespace Monitor {
 	}
 
 	void start() {
-		cmd_list().push_back(new Command(new String("test")));
-		cmd_list().push_back(new TimerShowCommand(new String("timer")));
-		cmd_list().push_back(new DeviceTreeCommand(new String("devicetree")));
-		cmd_list().push_back(new SlabListCommand(new String("slablist")));
-		cmd_list().push_back(new LogListCommand(new String("loglist")));
+		//String* cmds = new String[5];
+		Command* cmds[5]; // = new String[5];
+		cmds[0] = new Command("test");
+		cmds[1] = new TimerShowCommand("timer");
+		cmds[2] = new DeviceTreeCommand("devicetree");
+		cmds[3] = new SlabListCommand("slablist");
+		cmds[4] = new LogListCommand("loglist");
+		cmd_list().push_back(cmds[0]);
+		cmd_list().push_back(cmds[1]);
+		cmd_list().push_back(cmds[2]);
+		cmd_list().push_back(cmds[3]);
+		cmd_list().push_back(cmds[4]);
 		while(true) {
 			printfk("(monitor) ");
 			String cmd = get_command();

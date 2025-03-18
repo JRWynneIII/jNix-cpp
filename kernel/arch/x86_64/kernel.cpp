@@ -53,7 +53,7 @@ namespace {
 
 
 // The following will be our kernel's entry point.
-extern "C" void _start(void) {
+extern "C" void kmain(void) {
 	if (LIMINE_BASE_REVISION_SUPPORTED == false) {
 		halt();
 	}
