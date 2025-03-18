@@ -37,10 +37,18 @@ public:
 	char* cstring() { return this->cstr; }
 
 	bool operator==(const String& rhs) { 
+		if (this->cstr == nullptr || rhs.cstr == nullptr) {
+			if (this->cstr == nullptr && rhs.cstr == nullptr) return true;
+			return false;
+		}
 		return strcmp(this->cstr, rhs.cstr); 
 	}
 
 	bool operator!=(const String& rhs) { 
+		if (this->cstr == nullptr || rhs.cstr == nullptr) {
+			if (this->cstr == nullptr && rhs.cstr == nullptr) return false;
+			return true;
+		}
 		bool ret = strcmp(this->cstr, rhs.cstr); 
 		return !ret;
 	}

@@ -7,6 +7,8 @@
 #include<kernel/ptr.hpp>
 #include<cstdint>
 
+#define SLAB_BUFFER_BYTES 10
+
 namespace Memory {
 	namespace Paging {
 		pml4_dir_t* pml4_dir;
@@ -30,7 +32,8 @@ namespace Memory {
 				slab_to_free->next = slab_to_free->next->next;
 				slab_to_free->next->previous = slab_to_free;
 
-				slab_to_free->size += old_next->size;
+				//We're removing a slab entry so we add the size of the entry to the free size
+				slab_to_free->size += old_next->size + sizeof(slab_t);
 			}
 			// Coallesce with previous slab is both are free
 			if (slab_to_free != slab_head && slab_to_free->previous->is_free) {
@@ -39,7 +42,8 @@ namespace Memory {
 				
 				rhs->previous = lhs;
 				lhs->next = rhs;
-				lhs->size += slab_to_free->size;
+				//We're removing a slab entry so we add the size of the entry to the free size
+				lhs->size += slab_to_free->size + sizeof(slab_t);
 			}
 			// TODO: invalidate page?
 			// 	do we really need to do that when we are tracking free slabs?
@@ -193,7 +197,10 @@ namespace Memory {
 
 		slab_t* create_new_pages(uint64_t num_pages) {
 			uint64_t iter = 0;
+			// When we allocate n new pages, slab_size is going to be less than the full page since we keep
+			// slab_t there
 			uint64_t slab_size = num_pages * PAGE_SIZE_BYTES;
+			
 			frame_t pages_to_allocate[num_pages];
 			for (auto region : Memory::usable_memory_regions) {
 				// Skip first memory region since it has page directory stuff there
@@ -240,9 +247,10 @@ namespace Memory {
 
 			// Write a new free slab entry at the beginning of new page range
 			uintptr_t slab_addr = pages_to_allocate[0].virt_addr;
-			slab_t s = { slab_addr, slab_addr, slab_size, true };
+			slab_t s = { slab_addr, slab_addr, (slab_size - sizeof(slab_t)), true };
 			// Copy the slab entry to the beginning of the first page
 			memcpy(slab_addr, &s, sizeof(slab_t));
+			//Insert into list
 			if (slab_head != nullptr) {
 				// Update last slab to point to new page's slab_t, only if this isn't the first slab
 				// on the first page
@@ -253,9 +261,6 @@ namespace Memory {
 				// Update the circular link so head->prev == new_slab
 				slab_head->previous = slab_addr;
 			}
-
-
-
 
 			return (slab_t*)slab_addr;
 		}
@@ -282,14 +287,16 @@ namespace Memory {
 		}
 
 		void* kalloc(uint64_t objsize, uint64_t num) {
+			//uint64_t numbytes = objsize * num + SLAB_BUFFER_BYTES;
 			uint64_t numbytes = objsize * num;
 			slab_t* slab = find_free_slab(numbytes);
 			// Create new page if there is no free slab of correct size
 			if (slab == nullptr || slab->size < numbytes) {
-				//slab = create_new_page();
-				uint64_t num_pages = (numbytes / PAGE_SIZE_BYTES);
+				// We need to make sure the aggr page size is big enough for both the object and
+				// the slab_t's
+				uint64_t num_pages = ((numbytes + sizeof(slab_t)) / PAGE_SIZE_BYTES);
 				// Round up if not evenly divisible by page size
-				if (numbytes % PAGE_SIZE_BYTES != 0) 
+				if (((numbytes + sizeof(slab_t))) % PAGE_SIZE_BYTES != 0) 
 					num_pages++;
 
 				slab = create_new_pages(num_pages);
@@ -297,21 +304,39 @@ namespace Memory {
 
 			if (slab->size > numbytes) {
 				// If requested slab is smaller than found slab, then bifurcate the slab
-				slab_t new_slab = {slab->next, slab, slab->size - numbytes, true};
+				// TODO: If i'm splittling a slab, shouldn't the new slab be size of 
+				// (remaining space - sizeof(slab_t)) to account for the new slab entry?
+				//
+				//                      100
+				// |slab_t|----data----------------------------------------
+				// 		10		   90-(sizeof(slab_t)) = 52
+				// |slab_t|----data----|slab_t|----data---------------------
 
-				slab_t* new_slab_addr = slab + numbytes + sizeof(slab_t);
+				// We have a possibility to have a slab that is < sizeof(slab_t) after bifurcation
+				// So to avoid this, we just won't bifurcate if the remaining slab isn't going to fit right
+				if (slab->size - numbytes >= sizeof(slab_t) ) {
+					int64_t new_slab_size_bytes = slab->size - numbytes - sizeof(slab_t);
+					slab_t new_slab = {slab->next, slab, new_slab_size_bytes, true};
+					//slab_t new_slab = {slab->next, slab, (slab->size - numbytes), true};
 
-				slab->next->previous = new_slab_addr;
-				slab->size = numbytes;
-				slab->next = new_slab_addr;
+					// |slab_t|----data----|slab_t|----data----
+					// ^slab  
+					//        ^ slab+sizeof(slab_t)
+					//                     ^ + numbytes
+					slab_t* new_slab_addr = slab + sizeof(slab_t) + numbytes;
 
-				memcpy(new_slab_addr, &new_slab, sizeof(slab_t));
+					slab->next->previous = new_slab_addr;
+					slab->size = numbytes;
+					slab->next = new_slab_addr;
+
+					memcpy(new_slab_addr, &new_slab, sizeof(slab_t));
+				}
 			} else if (slab->size < numbytes) {
 				logfk(ERROR, "Cannot allocate larger object in smaller slab!\n");
 				printfk("Slab size: %d\tnumbytes: %d\n", slab->size, numbytes);
 				halt();
-			} else {
-				slab->size = numbytes;
+//			} else {
+//				slab->size = numbytes;
 			}
 			// Set the slab as used;
 			slab->is_free = false;

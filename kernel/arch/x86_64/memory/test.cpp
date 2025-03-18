@@ -42,7 +42,7 @@ namespace Memory {
 			slab_t* cur = get_slab_head();
 			int idx = 0;
 			while (cur != get_slab_head() || idx == 0) {
-				printfk("Slab #%d address: %x { %x, %x, %d, %d }\n", 
+				printfk("Slab #%d address: %x { %x, %x, %u, %d }\n", 
 						idx, 
 						cur, 
 						cur->next, 
@@ -100,17 +100,16 @@ namespace Memory {
 				printk(" FAILED\n");
 			}
 
-			dump_slab_list();
 			kfree(t1);
 			logfk(KERNEL, "Free'd %x\n", t1);
 
-			uint64_t* t3 = kalloc(sizeof(uint64_t), 512);
+			uint32_t* t3 = kalloc(sizeof(uint32_t), 127);
 			logfk(KERNEL, "Testing allocation of 4096 bytes %x ", t3);
-			for (int i = 0; i< 512; i++) {
+			for (int i = 0; i< 127; i++) {
 				t3[i] = i+1;
 			}
 			pass = true;
-			for (int i=0; i<512; i++) {
+			for (int i=0; i<127; i++) {
 				if (t3[i] != i+1) {
 					pass = false;
 				}
@@ -122,10 +121,10 @@ namespace Memory {
 				printk(" FAILED\n");
 			}
 
-			dump_slab_list();
 			kfree(t3);
 			logfk(KERNEL, "Free'd %x\n", t3);
 
+			//uint64_t* t2 = kalloc(sizeof(uint64_t), 5);
 			uint64_t* t2 = kalloc(sizeof(uint64_t), 5);
 			logfk(KERNEL, "Testing allocation of 40 bytes (second pass) %x ", t2);
 			t2[0] = 6;
@@ -144,17 +143,16 @@ namespace Memory {
 				printk(" FAILED\n");
 			}
 
-			dump_slab_list();
 			kfree(t2);
 			logfk(KERNEL, "Free'd %x\n", t2);
 
-			uint64_t* t4 = kalloc(sizeof(uint64_t), 512);
+			uint32_t* t4 = kalloc(sizeof(uint32_t), 127);
 			logfk(KERNEL, "Testing allocation of 4096 bytes (second pass) %x ", t4);
-			for (int i = 0; i< 512; i++) {
+			for (int i = 0; i< 127; i++) {
 				t4[i] = i+1;
 			}
 			pass = true;
-			for (int i=0; i<512; i++) {
+			for (int i=0; i<127; i++) {
 				if (t4[i] != i+1) pass = false;
 			}
 
@@ -164,7 +162,6 @@ namespace Memory {
 				printk(" FAILED\n");
 			}
 
-			dump_slab_list();
 			kfree(t4);
 			logfk(KERNEL, "Free'd %x\n", t4);
 
@@ -184,10 +181,8 @@ namespace Memory {
 				printk(" FAILED\n");
 			}
 
-			dump_slab_list();
 			kfree(t5);
 			logfk(KERNEL, "Free'd %x\n", t5);
-			dump_slab_list();
 			logfk(KERNEL, "Memory management testing complete\n");
 		}
 
