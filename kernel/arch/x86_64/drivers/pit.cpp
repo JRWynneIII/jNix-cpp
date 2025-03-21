@@ -14,6 +14,7 @@ pit_driver::pit_driver() {
 	this->desc = TIMER_DRIVER;
 	this->device_desc = TIMER;
 	this->set_name("pit");
+	this->callbacks = new vector<tick_callback_t>();
 }
 
 void pit_irq_wrapper(struct registers* r) {
@@ -38,8 +39,20 @@ void pit_driver::set_tick_hz(uint64_t hz) {
 
 void pit_driver::irq_handler(struct registers* r) {
 	this->ticks++;
+	this->run_callbacks();
 }
 
 uint64_t pit_driver::get_ticks() {
 	return this->ticks;
+}
+
+void pit_driver::on_tick(uint64_t divisor, void (*callback)()) {
+	tick_callback_t cb = {divisor, callback};
+	this->callbacks->push_back(cb);
+}
+void pit_driver::run_callbacks() {
+	for (auto callback : *(this->callbacks)) {
+		if (this->ticks % callback.divisor == 0)
+			callback.callback();
+	}
 }

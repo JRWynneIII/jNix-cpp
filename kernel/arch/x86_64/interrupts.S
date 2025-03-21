@@ -45,6 +45,7 @@
 .global irq0
 .global irq1
 .global irq2
+.global irq8
 
 #  0: Divide By Zero Exception
 isr0: 
@@ -325,6 +326,12 @@ irq2:
 	cli
 	pushq $0
 	pushq $34
+	jmp irq_stub
+
+irq8:
+	cli
+	pushq $0
+	pushq $40
 	jmp irq_stub
 
 .extern irq_handler

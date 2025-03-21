@@ -7,18 +7,10 @@
 #include<kernel/panic.h>
 #include<kernel/interrupts.h>
 
-#define PIC_READ_IRR 0x0a	//Raised IRQ
-#define PIC_READ_ISR 0x0b
-#define PIC1_CMD 0x20
-#define PIC2_CMD 0xA0
-#define PIC1_DATA 0x21
-#define PIC2_DATA 0xA1
-#define PIC_INIT 0x11
-#define SIG_EOI 0x20 //Signals the end of the interrupt
-
 extern "C" void irq0();
 extern "C" void irq1();
 extern "C" void irq2();
+extern "C" void irq8();
 
 extern "C" void isr0();
 extern "C" void isr1();
@@ -164,34 +156,65 @@ namespace Interrupts {
 		outportb(PIC2_DATA,0xff);
 	}
 
+	void disable_all() {
+		outportb(PIC1_DATA, 0xFF);
+		outportb(PIC2_DATA, 0xFF);
+	}
+
+	void set_pic_mask(uint16_t port, uint8_t mask) {
+		__asm__ __volatile__("cli");
+		outportb(port, mask);
+		__asm__ __volatile__("sti");
+	}
+
+	uint8_t get_pic_mask(uint16_t port) {
+		return inportb(port);
+	}
+
 	uint8_t get_mask(uint64_t irq) {
 		//Save current PIC masks
-		uint16_t port = PIC1_DATA;
-		if (irq > 8) port = PIC2_DATA;
+		//uint16_t port = PIC1_DATA;
+		if (irq >= 8) return inportb(PIC2_DATA); // port = PIC2_DATA;
+		return inportb(PIC1_DATA);
+	}
 
-		return inportb(port);
+	void disable_nmi() {
+		uint8_t cur = inportb(0x70);
+		outportb(0x70, (cur | 0x80));
+		//Need to read p 70 or else ctrlr may be in a weird state
+		inportb(0x71);
+	}
+
+	void enable_nmi() {
+		uint8_t cur = inportb(0x70);
+		outportb(0x70, (cur & 0x7F));
+		//Need to read p 70 or else ctrlr may be in a weird state
+		inportb(0x71);
 	}
 
 	void write_mask(uint64_t irq, uint8_t mask) {
 		//Save current PIC masks
 		__asm__ __volatile__("cli");
-		uint8_t port = PIC1_DATA;
-		if (irq > 8) port = PIC2_DATA;
 
-		outportb(PIC1_DATA, mask);
+		if (irq >= 8) { 
+			outportb(PIC2_DATA, mask);
+		} else {
+			outportb(PIC1_DATA, mask);
+		}
 		__asm__ __volatile__("sti");
 	}
 
 	void mask_irq(uint64_t irq) {
 		uint8_t cur_mask = get_mask(irq);
-		if (irq > 8 ) irq -= 8;
-		write_mask(irq, cur_mask | (1<<irq));
+		if (irq >= 8 ) irq -= 8;
+		write_mask(irq, (cur_mask | (1<<irq)));
 	}
 
 	void unmask_irq(uint64_t irq) {
 		uint8_t cur_mask = get_mask(irq);
-		if (irq > 8 ) irq -= 8;
-		write_mask(irq, (cur_mask & ~(1<<irq)));
+		uint8_t line = irq;
+		if (irq >= 8 ) line -= 8;
+		write_mask(irq, (cur_mask & ~(1<<line)));
 	}
 
 	void init() {
@@ -236,6 +259,7 @@ namespace Interrupts {
 		idt_set_gate(32, irq0, 0x8E);
 		idt_set_gate(33, irq1, 0x8E);
 		idt_set_gate(34, irq2, 0x8E);
+		idt_set_gate(34, irq8, 0x8E);
 
 		logfk(KERNEL, "Loading IDT");
 		load_idt();

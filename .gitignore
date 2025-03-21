@@ -1,5 +1,6 @@
 *.sw*
 *_todo*
+todo
 *.d
 *.o
 *.elf

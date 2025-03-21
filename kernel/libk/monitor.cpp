@@ -13,6 +13,39 @@
 #include<string.hpp>
 #include<kernel/monitor.hpp>
 #include<kernel/monitor/command.hpp>
+#include<kernel/time.hpp>
+
+class ClockShowCommand : public Command {
+public:
+	ClockShowCommand() {}
+	//ClockShowCommand(String s) : Command(s) {}
+	ClockShowCommand(char* s) : Command(s) {}
+	void run() {
+		Device* clock = Devices::get_device_by_path("rtc.real_time_clock.1");
+		if (clock != nullptr) {
+			rtc_driver* driver = static_cast<rtc_driver*>(clock->get_driver());
+			printfk("%d %d/%d %d:%d:%d\n",
+					driver->get_year(),
+					driver->get_month(),
+					driver->get_day(),
+					driver->get_hours(),
+					driver->get_minutes(),
+					driver->get_seconds());
+		} else {
+			logfk(ERROR, "Could not find timer\n");
+		}
+	}
+};
+
+class SleepTestCommand : public Command {
+public:
+	SleepTestCommand() {}
+	//SleepTestCommand(String s) : Command(s) {}
+	SleepTestCommand(char* s) : Command(s) {}
+	void run() {
+		Kernel::Time::sleep(1000);
+	}
+};
 
 class TimerShowCommand : public Command {
 public:
@@ -130,6 +163,8 @@ namespace Monitor {
 
 		cmd_list().push_back(new InterruptTestCommand("inttest"));
 		cmd_list().push_back(new PagingTestCommand("pagetest"));
+		cmd_list().push_back(new SleepTestCommand("sleep"));
+		cmd_list().push_back(new ClockShowCommand("clock"));
 		cmd_list().push_back(new HelpCommand("help"));
 		while(true) {
 			printfk("(monitor) ");

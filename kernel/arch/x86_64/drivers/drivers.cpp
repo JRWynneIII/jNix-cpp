@@ -2,6 +2,7 @@
 #include<kernel/interrupts.h>
 #include<kernel/drivers/ps2.hpp>
 #include<kernel/drivers/pit.hpp>
+#include<kernel/drivers/rtc.hpp>
 #include<kernel/drivers/driver_api.hpp>
 #include<kernel.h>
 #include<kernel/drivers/driver.hpp>
@@ -15,6 +16,14 @@ namespace Drivers {
 	}
 	ps2_driver* ps2_driver_ptr = nullptr;
 	pit_driver* pit_driver_ptr = nullptr;
+	rtc_driver* rtc_driver_ptr = nullptr;
+
+	rtc_driver* get_rtc_driver() {
+		for( auto d : drivers() ) {
+			if (d->desc == RTC_DRIVER) return static_cast<rtc_driver*>(d);
+		}
+		return nullptr;
+	}
 
 	pit_driver* get_timer_driver() {
 		for (int i = 0; i < drivers().length() ; i++) {
@@ -36,9 +45,14 @@ namespace Drivers {
 		auto ps2 = get_ps2_driver();
 		if (ps2 != nullptr) ps2->install();
 		else logfk(ERROR, "Could not find PS2 driver during initialize!\n");
+
 		auto timer = get_timer_driver();
 		if (timer != nullptr) timer->install();
 		else logfk(ERROR, "Could not find timer driver during initialize!\n");
+
+		auto rtc = get_rtc_driver();
+		if (rtc != nullptr) rtc->install();
+		else logfk(ERROR, "Could not find rtc driver during initialize!\n");
 	}
 
 	void load_drivers() {
@@ -47,6 +61,9 @@ namespace Drivers {
 
 		pit_driver* pit = new pit_driver();
 		drivers().push_back(pit);
+
+		rtc_driver* rtc = new rtc_driver();
+		drivers().push_back(rtc);
 	}
 
 	void dump_ps2_config() {

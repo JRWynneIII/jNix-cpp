@@ -8,6 +8,7 @@ typedef enum device_desc {
 	BLOCKDEV,
 	CHARDEV,
 	TIMER,
+	CLOCK,
 	UNKNOWN,
 } device_desc_t;
 
