@@ -3,6 +3,7 @@
 #include<kernel/drivers/ps2.hpp>
 #include<kernel/drivers/pit.hpp>
 #include<kernel/drivers/rtc.hpp>
+#include<kernel/drivers/framebuffer.hpp>
 #include<kernel/drivers/driver_api.hpp>
 #include<kernel.h>
 #include<kernel/drivers/driver.hpp>
@@ -17,6 +18,14 @@ namespace Drivers {
 	ps2_driver* ps2_driver_ptr = nullptr;
 	pit_driver* pit_driver_ptr = nullptr;
 	rtc_driver* rtc_driver_ptr = nullptr;
+	framebuffer_driver* fb_driver_ptr = nullptr;
+
+	framebuffer_driver* get_framebuffer_driver() {
+		for( auto d : drivers() ) {
+			if (d->desc == FRAMEBUFFER_DRIVER) return static_cast<framebuffer_driver*>(d);
+		}
+		return nullptr;
+	}
 
 	rtc_driver* get_rtc_driver() {
 		for( auto d : drivers() ) {
@@ -64,6 +73,10 @@ namespace Drivers {
 
 		rtc_driver* rtc = new rtc_driver();
 		drivers().push_back(rtc);
+
+		//Finish initialization of Console device and framebuffer_driver
+		framebuffer_driver* fb = &FrameBuffer::driver();
+		Devices::add_device(fb, CONSOLE, "console");
 	}
 
 	void dump_ps2_config() {

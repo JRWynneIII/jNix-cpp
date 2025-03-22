@@ -9,6 +9,7 @@ typedef enum device_desc {
 	CHARDEV,
 	TIMER,
 	CLOCK,
+	CONSOLE,
 	UNKNOWN,
 } device_desc_t;
 

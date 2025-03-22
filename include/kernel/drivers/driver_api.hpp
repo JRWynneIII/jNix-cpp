@@ -3,6 +3,7 @@
 #include<kernel/drivers/ps2.hpp>
 #include<kernel/drivers/pit.hpp>
 #include<kernel/drivers/rtc.hpp>
+#include<kernel/drivers/framebuffer.hpp>
 #include<kernel/drivers/driver.hpp>
 
 namespace Drivers {
@@ -12,4 +13,5 @@ namespace Drivers {
 	ps2_driver* get_ps2_driver();
 	pit_driver* get_timer_driver();
 	rtc_driver* get_rtc_driver();
+	framebuffer_driver* get_framebuffer_driver();
 }

@@ -7,6 +7,7 @@
 typedef enum driver_desc {
 	PS2_DRIVER,
 	TIMER_DRIVER,
+	FRAMEBUFFER_DRIVER,
 	RTC_DRIVER
 } driver_desc_t;
 

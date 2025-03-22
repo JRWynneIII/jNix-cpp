@@ -2,6 +2,9 @@
 #include<stdint.h>
 #include<vector.hpp>
 #include<string.hpp>
+//#include<kernel/interrupts.h>
+//#include<kernel/drivers/driver.hpp>
+//#include<kernel/drivers/framebuffer.hpp>
 
 void printk(char* msg);
 void putchk(char c);
@@ -54,10 +57,6 @@ void logfk(enum LOGLEVEL level, char* fmt, varargs... args) {
 		printk("Error in logk: fmt is null!");
 	}
 
-}
-
-namespace FrameBuffer {
-	void init();
 }
 
 void halt();
