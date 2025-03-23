@@ -14,6 +14,67 @@
 #include<kernel/monitor.hpp>
 #include<kernel/monitor/command.hpp>
 #include<kernel/time.hpp>
+#include<kernel/vfs/vnode.hpp>
+#include<kernel/vfs/vfs.hpp>
+
+class StatCatCommand : public Command {
+public:
+	StatCatCommand() {}
+	//LSCommand(String s) : Command(s) {}
+	StatCatCommand(char* s) : Command(s) {}
+	void run() {
+		vnode_t* file = VFS::stat("/bin/cat");
+		if (file != nullptr) {
+			inode_t* ino = file->inode;
+			printfk("%s: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
+					file->name,
+					ino->fs_ident, 
+					ino->inode_num,
+					ino->mode,
+					ino->ctime,
+					ino->mtime,
+					ino->atime,
+					ino->size,
+					ino->uid,
+					ino->gid,
+					ino->nlinks,
+					ino->blocks,
+					ino->block_size
+			);
+			
+		}
+	}
+};
+
+class LSBinCommand : public Command {
+public:
+	LSBinCommand() {}
+	//LSCommand(String s) : Command(s) {}
+	LSBinCommand(char* s) : Command(s) {}
+	void run() {
+		vector<vnode_t*>* dir = VFS::readdir("/bin");
+		if (dir != nullptr) {
+			for (auto i : *dir) {
+				printfk("%s\n", i->name);
+			}
+		}
+	}
+};
+
+class LSCommand : public Command {
+public:
+	LSCommand() {}
+	//LSCommand(String s) : Command(s) {}
+	LSCommand(char* s) : Command(s) {}
+	void run() {
+		vector<vnode_t*>* dir = VFS::readdir("/");
+		if (dir != nullptr) {
+			for (auto i : *dir) {
+				printfk("%s\n", i->name);
+			}
+		}
+	}
+};
 
 class ClockShowCommand : public Command {
 public:
@@ -165,10 +226,14 @@ namespace Monitor {
 		cmd_list().push_back(new PagingTestCommand("pagetest"));
 		cmd_list().push_back(new SleepTestCommand("sleep"));
 		cmd_list().push_back(new ClockShowCommand("clock"));
+		cmd_list().push_back(new LSCommand("ls"));
+		cmd_list().push_back(new LSBinCommand("lbin"));
+		cmd_list().push_back(new StatCatCommand("stat"));
 		cmd_list().push_back(new HelpCommand("help"));
 		while(true) {
 			printfk("(monitor) ");
 			String cmd = get_command();
+			//TODO: Split cmd by ' ' and pass rest of string as arguments to run()
 			for (auto c : cmd_list() ) {
 				if (c->get_name() == cmd) {
 					c->run();

@@ -12,6 +12,7 @@
 #include<cxxabi.h>
 #include<kernel/devices/device_api.hpp>
 #include<kernel/monitor.hpp>
+#include<kernel/vfs/vfs.hpp>
 
 // DO NOT REMOVE
 extern "C" {
@@ -92,6 +93,9 @@ extern "C" void kmain(void) {
 	Devices::dump_device_tree();
 	int64_t boottime = boot_time_req.response->boot_time;
 	logfk(KERNEL, "Boot time: %d\n", boottime);
+	logfk(KERNEL, "Initializing VFS\n");
+	VFS::init();
+	logfk(KERNEL, "VFS intialization complete\n");
 	//Memory::Paging::test();
 
 	logfk(KERNEL, "Starting kernel-space monitor\n\n\n\n\n\n");
