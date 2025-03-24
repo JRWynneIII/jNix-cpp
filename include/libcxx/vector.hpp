@@ -27,18 +27,18 @@ public:
 	}
 	
 	vector(size_t size) {
-		node<T>* cur = this->head;
-		node<T>* prev = nullptr;
-		cur = new node<T>();
-		this->head = cur;
-		for (int i=0 ; i < size; i++) {
-			cur->set_next(new node<T>());
-			cur->set_prev(prev);
-			prev = cur;
-			cur = cur->get_next();
-		}
-		this->size = size;
-		this->tail = prev;
+	//	node<T>* cur = this->head;
+	//	node<T>* prev = nullptr;
+	//	cur = new node<T>();
+	//	this->head = cur;
+	//	for (int i=0 ; i < size; i++) {
+	//		cur->set_next(new node<T>());
+	//		cur->set_prev(prev);
+	//		prev = cur;
+	//		cur = cur->get_next();
+	//	}
+	//	this->size = size;
+	//	this->tail = prev;
 	}
 
 	vIterator<T> begin() { return vIterator<T>(this->head); }
@@ -51,8 +51,11 @@ public:
 	
 	void push_back(T val) {
 		if (tail != nullptr) {
-			this->tail->set_next(new node<T>(val));
-			this->tail = this->tail->get_next();
+			node<T>* old_tail = this->tail;
+			node<T>* new_node = new node<T>(val);
+			new_node->set_prev(this->tail);
+			this->tail->set_next(new_node);
+			this->tail = new_node;
 		} else {
 			this->head = new node<T>(val);
 			this->tail = this->head;
@@ -63,10 +66,13 @@ public:
 	T pop_head() {
 		T ret = this->head->get_value();
 		node<T>* new_head = head->get_next();
-		delete this->head;
+
 		if (this->head == this->tail) {
-			this->tail = new_head;
+			this->tail = nullptr;
+			new_head = nullptr;
 		}
+
+		delete this->head;
 		this->head = new_head;
 		this->size--;
 		return ret;

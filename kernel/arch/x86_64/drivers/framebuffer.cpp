@@ -10,7 +10,6 @@
 #include <flanterm/backends/fb.h>
 #include <kernel/streams.h>
 #include<vector.hpp>
-#include<string.hpp>
 #include<kernel/interrupts.h>
 #include<kernel/drivers/driver.hpp>
 #include<kernel/drivers/framebuffer.hpp>

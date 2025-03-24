@@ -1,7 +1,5 @@
 #pragma once
 #include<stdint.h>
-#include<vector.hpp>
-#include<string.hpp>
 //#include<kernel/interrupts.h>
 //#include<kernel/drivers/driver.hpp>
 //#include<kernel/drivers/framebuffer.hpp>
@@ -60,47 +58,3 @@ void logfk(enum LOGLEVEL level, char* fmt, varargs... args) {
 }
 
 void halt();
-
-namespace Kernel {
-	vector<String>& kernel_logs();
-	void append_log(String s); 
-
-	template<typename... varargs>
-	void Log(enum LOGLEVEL level, char* fmt, varargs... args) {
-		if (fmt != nullptr) {
-			String fullmsg;
-			switch(level) {
-				case LOGLEVEL::KERNEL:
-					fullmsg = "[KERNEL] ";
-					//TODO: fix sprintf so that you pass a buffer or a size argument
-					//	this is causing corruption of the slab table somehow??
-					fullmsg += sprintf(fmt, args...);
-					break;
-				case LOGLEVEL::USER:
-					fullmsg = "[USER] ";
-					fullmsg += sprintf(fmt, args...);
-					break;
-				case LOGLEVEL::INFO:
-					fullmsg = "[INFO] ";
-					fullmsg += sprintf(fmt, args...);
-					break;
-				case LOGLEVEL::ERROR:
-					fullmsg = "[ERROR] ";
-					fullmsg += sprintf(fmt, args...);
-					break;
-				case LOGLEVEL::PANIC:
-					fullmsg = "[PANIC] ";
-					fullmsg += sprintf(fmt, args...);
-					break;
-				default:
-					printk(fmt);
-			}
-			Kernel::append_log(fullmsg);
-			printfk("%s", fullmsg.cstring());
-		} else {
-			printk("Error in logk: fmt is null!");
-		}
-	
-	}
-}
-	

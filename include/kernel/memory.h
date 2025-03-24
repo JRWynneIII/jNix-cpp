@@ -3,6 +3,7 @@
 #include<kernel/ptr.hpp>
 
 #define TO_VIRT_ADDR(a) ((uintptr_t)a | Memory::hhdm_offset)
+#define TO_PHYS_ADDR(a) ((uintptr_t)a ^ Memory::hhdm_offset)
 #define PAGE_SIZE_BYTES 4096
 
 #define SLAB_PTR_SIZE sizeof(slab_t)
@@ -106,6 +107,9 @@ struct frame_t {
 
 typedef struct slab_t;
 struct slab_t {
+//	uint64_t buffer = 0;
+//	uint64_t buffer2 = 0;
+//	uint64_t buffer3 = 0;
 	slab_t* next;
 	slab_t* previous;
 	uint64_t size; //bytes

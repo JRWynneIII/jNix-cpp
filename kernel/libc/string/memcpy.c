@@ -1,6 +1,5 @@
-#include <stdbool.h> /* C doesn't have booleans by default. */
+#include <stdbool.h> 
 #include <stddef.h>
-//#include <stdint.h>
 
 void *memcpy(void *dest, const void *src, size_t count)
 {

@@ -9,23 +9,6 @@
 #include <kernel/interrupts.h>
 #include <kernel/drivers/framebuffer.hpp>
 
-#include<vector.hpp>
-#include<string.hpp>
-
-namespace Kernel {
-	vector<String>& kernel_logs() {
-		static vector<String>* l = new vector<String>();
-		return *l;
-	}
-
-	void append_log(String s) {
-		String cur = s; 
-		//TODO: does not work; fix
-		cur.trim();
-		kernel_logs().push_back(cur);
-	}
-}
-	
 void logk(char* msg, enum LOGLEVEL level) {
 	if (msg != nullptr) {
 		switch(level) {

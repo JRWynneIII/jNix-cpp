@@ -212,7 +212,9 @@ namespace Memory {
 				uintptr_t cur = region.base;
 				// Flag for finding the correct number of contiguous pages
 				bool found_contiguous_pages = true;
-				while(cur < (region.base + region.length)) {
+				//while(cur < (region.base + region.length)) {
+				while(cur < ((region.base + region.length) - slab_size)) {
+					found_contiguous_pages = true;
 					// Look for num_pages of contiguous pages
 					for (int i = 0; i < num_pages; i++) {
 						uintptr_t page_start = cur + (PAGE_SIZE_BYTES * i);
@@ -227,16 +229,14 @@ namespace Memory {
 						}
 					}
 
-					if (found_contiguous_pages) {
-						for (auto frame : pages_to_allocate) {
-							create_page_table_entry(&frame);
-							pt_entry_t* page = lookup_address(frame.virt_addr);
-							page->present = true;
-						}
-						// Escape from the while loop. We've found and allocated our pages
-						break;
-					}
+					if (found_contiguous_pages) break;
 					cur += slab_size;
+				}
+
+				for (auto frame : pages_to_allocate) {
+					create_page_table_entry(&frame);
+					pt_entry_t* page = lookup_address(frame.virt_addr);
+					page->present = true;
 				}
 
 				// Escape the for loop if we've found our pages/slab
@@ -246,10 +246,12 @@ namespace Memory {
 			}
 
 			// Write a new free slab entry at the beginning of new page range
-			uintptr_t slab_addr = pages_to_allocate[0].virt_addr;
+			slab_t* slab_addr = (slab_t*)((uint8_t*)(pages_to_allocate[0].virt_addr));
 			slab_t s = { slab_addr, slab_addr, (slab_size - sizeof(slab_t)), true };
 			// Copy the slab entry to the beginning of the first page
-			memcpy(slab_addr, &s, sizeof(slab_t));
+
+			*slab_addr = s;
+
 			//Insert into list
 			if (slab_head != nullptr) {
 				// Update last slab to point to new page's slab_t, only if this isn't the first slab
@@ -304,45 +306,56 @@ namespace Memory {
 
 			if (slab->size > numbytes) {
 				// If requested slab is smaller than found slab, then bifurcate the slab
-				// TODO: If i'm splittling a slab, shouldn't the new slab be size of 
-				// (remaining space - sizeof(slab_t)) to account for the new slab entry?
-				//
 				//                      100
 				// |slab_t|----data----------------------------------------
 				// 		10		   90-(sizeof(slab_t)) = 52
 				// |slab_t|----data----|slab_t|----data---------------------
 
+				uint64_t old_slab_orig_size = slab->size;
+				uint64_t old_slab_orig_full_size = old_slab_orig_size + sizeof(slab_t);
+
+				uint64_t old_slab_new_size = numbytes;
+				uint64_t old_slab_new_full_size = old_slab_new_size + sizeof(slab_t);
+
+				int64_t new_slab_full_size = old_slab_orig_full_size - numbytes - sizeof(slab_t);
+				int64_t new_slab_size = new_slab_full_size - sizeof(slab_t);
+
 				// We have a possibility to have a slab that is < sizeof(slab_t) after bifurcation
 				// So to avoid this, we just won't bifurcate if the remaining slab isn't going to fit right
-				if (slab->size - numbytes >= sizeof(slab_t) ) {
-					int64_t new_slab_size_bytes = slab->size - numbytes - sizeof(slab_t);
-					slab_t new_slab = {slab->next, slab, new_slab_size_bytes, true};
-					//slab_t new_slab = {slab->next, slab, (slab->size - numbytes), true};
+				if (new_slab_size > 0) {
+					//slab_t new_slab = {slab->next, slab, (uint64_t)new_slab_size, true};
+
+					slab->size = numbytes;
 
 					// |slab_t|----data----|slab_t|----data----
 					// ^slab  
 					//        ^ slab+sizeof(slab_t)
-					//                     ^ + numbytes
-					slab_t* new_slab_addr = slab + sizeof(slab_t) + numbytes;
+					//                     ^ + slab->size
+					// NOTE: If you're going to do pointer math, make sure you use bytes instead of
+					// the default, which is the sizeof(type). Bleh. This caused SO MANY WEIRD ISSUES
+					// since we keep track of size in bytes, but moved the pointer and place the new slab by 
+					// O(sizeof(slab_t)) if we didn't cast 'slab' as uint8_t*. This is dumb
+					slab_t* new_slab = (slab_t*)((uint8_t*)(slab) + sizeof(slab_t) + numbytes);
+					new_slab->next = slab->next;
+					new_slab->previous = slab;
+					new_slab->size = new_slab_size;
+					new_slab->is_free = true;
 
-					slab->next->previous = new_slab_addr;
-					slab->size = numbytes;
-					slab->next = new_slab_addr;
-
-					memcpy(new_slab_addr, &new_slab, sizeof(slab_t));
+					//Insert into list
+					slab->next->previous = new_slab;
+					slab->next = new_slab;
 				}
 			} else if (slab->size < numbytes) {
 				logfk(ERROR, "Cannot allocate larger object in smaller slab!\n");
 				printfk("Slab size: %d\tnumbytes: %d\n", slab->size, numbytes);
 				halt();
-//			} else {
-//				slab->size = numbytes;
+			} else {
+				slab->size = numbytes;
 			}
 			// Set the slab as used;
 			slab->is_free = false;
 
 			return (void*) slab + sizeof(slab_t);
-			//return flist[0].virt_addr;
 		}
 
 		void init() {

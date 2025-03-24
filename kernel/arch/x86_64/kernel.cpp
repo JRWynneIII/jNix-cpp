@@ -90,7 +90,7 @@ extern "C" void kmain(void) {
 	Interrupts::init();
 	logfk(KERNEL, "Interrupt initialization complete\n");
 	Drivers::init();
-	Devices::dump_device_tree();
+	//Devices::dump_device_tree();
 	int64_t boottime = boot_time_req.response->boot_time;
 	logfk(KERNEL, "Boot time: %d\n", boottime);
 	logfk(KERNEL, "Initializing VFS\n");
@@ -98,7 +98,7 @@ extern "C" void kmain(void) {
 	logfk(KERNEL, "VFS intialization complete\n");
 	//Memory::Paging::test();
 
-	logfk(KERNEL, "Starting kernel-space monitor\n\n\n\n\n\n");
+	logfk(KERNEL, "Starting kernel-space monitor\n");
 	printfk("Welcome to jnix!\n");
 	//Memory::Paging::dump_slab_list();
 	Monitor::start();

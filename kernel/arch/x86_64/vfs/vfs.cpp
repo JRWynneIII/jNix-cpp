@@ -2,6 +2,7 @@
 #include<kernel/vfs/vnode.hpp>
 #include<kernel/vfs/vfs.hpp>
 #include<kernel.h>
+#include<string.h>
 
 namespace VFS {
 	VFS_t& vfs() {
@@ -57,12 +58,14 @@ namespace VFS {
 				cur++;
 			}
 			if (size > 0) {
-				char* cur_tok = new char[size];
+				char* cur_tok = new char[size+1];
 				for(int i = 0; i < size; i++) cur_tok[i] = path[idx+i];
+				cur_tok[size] = '\0';
 				tokens->push_back(cur_tok);
-				idx += size;
+				idx += (size-1);
+			} else {
+				cur++;
 			}
-			cur++;
 			idx++;
 		}
 		return tokens;
@@ -74,7 +77,9 @@ namespace VFS {
 		return nullptr;
 	}
 
-	vnode_t* stat(char* path) {
+	//TODO: add versions of readdir/lookup/stat/etc for inode number
+
+	vnode_t* lookup(char* path) {
 		if (path[0] != '/') {
 			logfk(ERROR, "VFS: Invalid path: %s\n", path);
 			return;
@@ -102,5 +107,9 @@ namespace VFS {
 		}
 		if (cur != nullptr) return cur;
 		return nullptr;
+	}
+
+	vnode_t* stat(char* path) {
+		return lookup(path);
 	}
 }
