@@ -29,7 +29,7 @@ public:
 		vnode_t* file = VFS::stat(args->pop_head());
 		if (file != nullptr) {
 			inode_t* ino = file->inode;
-			printfk("%s: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
+			printfk("%s:\n\tfs_ident: %d,\n\tinode: %d,\n\tmode: %d,\n\tctime: %d,\n\tmtime: %d,\n\tatime: %d,\n\tsize: %d,\n\tuid: %d,\n\tgid: %d,\n\tnlinks: %d,\n\tblocks: %d,\n\tblock_size: %d\n",
 					file->name,
 					ino->fs_ident, 
 					ino->inode_num,

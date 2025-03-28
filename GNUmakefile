@@ -51,11 +51,15 @@ deps: flanterm
 kernel: deps
 	$(MAKE) -C kernel
 
+initrd.tar:
+	tar cf initrd.tar sysroot
+
 #jnix.iso: deps limine libc/libk.a kernel
-jnix.iso: deps limine kernel
+jnix.iso: deps limine kernel initrd.tar
 	rm -rf iso_root
 	mkdir -p iso_root/boot
 	cp -v kernel/arch/x86_64//kernel.elf iso_root/boot/
+	cp -v initrd.tar iso_root/boot/
 	mkdir -p iso_root/boot/limine
 	cp -v limine.conf iso_root/boot/limine/
 	mkdir -p iso_root/EFI/BOOT

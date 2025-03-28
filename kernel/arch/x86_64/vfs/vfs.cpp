@@ -1,8 +1,16 @@
 #include<kernel/vfs/inode.hpp>
 #include<kernel/vfs/vnode.hpp>
 #include<kernel/vfs/vfs.hpp>
+#include<kernel/drivers/fs_driver.hpp>
+#include<kernel/drivers/driver_api.hpp>
 #include<kernel.h>
 #include<string.h>
+
+typedef struct fs_ident {
+	fs_driver_t* driver;
+	vnode_t* mountpoint;
+	char* path;
+} fs_ident_t;
 
 namespace VFS {
 	VFS_t& vfs() {
@@ -10,39 +18,49 @@ namespace VFS {
 		return *v;
 	}
 
-	vnode_t* pre_mount(char* path) {
-		logfk(KERNEL, "Creating temporary sysroot\n");
+	vector<fs_ident_t>& mountpoints() {
+		static vector<fs_ident_t>* m = new vector<fs_ident_t>();
+		return *m;
+	}
+
+	vnode_t* prepare_sysroot() {
+		logfk(KERNEL, "Creating VFS entry for /\n");
 		//Create the root inode, This will need to be filled in with data
 		//when you attach a real filesystem
 		inode_t* root_inode = new inode_t(0,0,777,0,0,0,sizeof(inode_t),1,1,1,1,4096, IDIR);
-		inode_t* bin_inode = new inode_t(1,1,777,0,0,0,sizeof(inode_t),1,1,1,1,4096, IDIR);
-		inode_t* test_file_inode = new inode_t(2,2,777,0,0,0,1356,1,1,1,1,4096, IFILE);
-		inode_t* ls_inode = new inode_t(3,3,777,0,0,0,sizeof(inode_t),1,1,1,1,4096, IFILE);
-		inode_t* cat_inode = new inode_t(4,4,777,0,0,0,sizeof(inode_t),1,1,1,1,4096, IFILE);
-
-		vnode_t* root_vnode = new vnode_t(path, root_inode);
-		vnode_t* bin_vnode = new vnode_t("bin", bin_inode);
-		vnode_t* test_file_vnode = new vnode_t("test_file", test_file_inode);
-		vnode_t* ls_vnode = new vnode_t("ls", ls_inode);
-		vnode_t* cat_vnode = new vnode_t("cat", cat_inode);
-
-		root_vnode->add_child(bin_vnode);
-		root_vnode->add_child(test_file_vnode);
-
-		bin_vnode->add_child(ls_vnode);
-		bin_vnode->add_child(cat_vnode);
+		vnode_t* root_vnode = new vnode_t("/", root_inode);
 
 		return root_vnode;
 	}
 
-	void mount(vnode_t* root_vnode) {
-		logfk(KERNEL, "Mounting %s within VFS\n", root_vnode->name);
-		vfs().root = root_vnode;
+	void attach(fs_ident_t fs) {
+		//TODO: keep track of multiple subtrees in the vfs tree per vnode, 
+		// since one can mount *something* ontop of something else
+		// otherwise this causes a memory leak
+		// or just delete the subtree
+		logfk(KERNEL, "Mounting %s within VFS\n", fs.mountpoint->name);
+		if (strcmp(fs.mountpoint->name, "/")) {
+			vfs().root = fs.mountpoint;
+		} else {
+			vnode_t* mountpoint_vnode = lookup(fs.path);
+			*mountpoint_vnode = *(fs.mountpoint);
+		}
+	}
+
+	void mount(vnode_t* vnode, fs_driver_t* driver, char* path) {
+		fs_ident_t fs = {
+			driver,
+			vnode,
+			path
+		};
+		attach(fs);
+		mountpoints().push_back(fs);
 	}
 
 	void init() {
-		vnode_t* root = pre_mount("/");
-		mount(root);
+		//Create our '/' vnode and attach it
+		vnode_t* root = prepare_sysroot();
+		mount(root, Drivers::get_initrd_driver(), "/");
 	}
 
 	vector<char*>* split_path(char* path) {
@@ -100,7 +118,37 @@ namespace VFS {
 			}
 			
 			if (child == nullptr) {
-				logfk(ERROR, "VFS: stat() failed on path %s\n", path);
+				logfk(ERROR, "VFS: lookup/stat() failed on path %s\n", path);
+				return;
+			}
+			cur = child;
+		}
+		if (cur != nullptr) return cur;
+		return nullptr;
+	}
+
+	vnode_t* find(vnode_t* root, char* path) {
+		if (path[0] != '/') {
+			logfk(ERROR, "VFS: Invalid path: %s\n", path);
+			return;
+		}
+
+		vector<char*>* spath = split_path(path);
+
+		vnode_t* cur = root;
+
+		if (strcmp(path, "/"))
+			return cur;
+
+		for (auto dir : *spath) {
+			vnode_t* child = nullptr;
+
+			for ( auto c : *(cur->get_children())) {
+				if (strcmp(c->name, dir)) { child = c; break; }
+			}
+			
+			if (child == nullptr) {
+				logfk(ERROR, "VFS: find() failed on path %s\n", path);
 				return;
 			}
 			cur = child;

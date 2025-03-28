@@ -8,3 +8,5 @@ todo
 *freestanding*
 *limine*
 *flanterm*
+sysroot*
+initrd.tar

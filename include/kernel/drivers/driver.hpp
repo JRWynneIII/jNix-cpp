@@ -1,13 +1,14 @@
 #pragma once
 #include<kernel.h>
 //#include<cstdint>
-//#include<kernel/interrupts.h>
+#include<kernel/interrupts.h>
 //#include<kernel/ptr.hpp>
 
 typedef enum driver_desc {
 	PS2_DRIVER,
 	TIMER_DRIVER,
 	FRAMEBUFFER_DRIVER,
+	FILESYSTEM_DRIVER,
 	RTC_DRIVER
 } driver_desc_t;
 

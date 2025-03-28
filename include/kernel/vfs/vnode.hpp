@@ -18,6 +18,7 @@ public:
 	~vnode_t() {
 		//TODO: You might need to relink the children nodes to 
 		//a new parent before you delete this node
+		//TODO: delete all children and children's children, etc
 		delete this->children;
 	}
 

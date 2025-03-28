@@ -86,16 +86,18 @@ extern "C" void kmain(void) {
 
 	logfk(KERNEL, "Loading drivers...\n");
 	Drivers::load_drivers();
-	logfk(KERNEL, "Initializing drivers...\n");
 	Interrupts::init();
 	logfk(KERNEL, "Interrupt initialization complete\n");
-	Drivers::init();
-	//Devices::dump_device_tree();
-	int64_t boottime = boot_time_req.response->boot_time;
-	logfk(KERNEL, "Boot time: %d\n", boottime);
 	logfk(KERNEL, "Initializing VFS\n");
 	VFS::init();
 	logfk(KERNEL, "VFS intialization complete\n");
+	logfk(KERNEL, "Initializing drivers...\n");
+	Drivers::init();
+	logfk(KERNEL, "Driver initialization complete\n");
+
+	//Devices::dump_device_tree();
+	int64_t boottime = boot_time_req.response->boot_time;
+	logfk(KERNEL, "Boot time: %d\n", boottime);
 	//Memory::Paging::test();
 
 	logfk(KERNEL, "Starting kernel-space monitor\n");

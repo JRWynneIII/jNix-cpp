@@ -1,6 +1,7 @@
 #pragma once
 #include<kernel/vfs/inode.hpp>
 #include<kernel/vfs/vnode.hpp>
+#include<kernel/drivers/fs_driver.hpp>
 
 //Probably won't need this but might be nice to have
 //class VFSIterator {
@@ -37,9 +38,11 @@ public:
 namespace VFS {
 	VFS_t& vfs();
 	vnode_t* pre_mount(char* path);
-	void mount(vnode_t* root_vnode);
+	vnode_t* find(vnode_t* root, char* path);
+	void mount(vnode_t* vnode, fs_driver_t* driver, char* path);
 	void init();
 	vector<char*>* split_path(char* path);
 	vector<vnode_t*>* readdir(char* path);
 	vnode_t* stat(char* path);
+	vnode_t* lookup(char* path);
 }

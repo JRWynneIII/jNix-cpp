@@ -51,7 +51,7 @@ void rtc_driver::install() {
 	Devices::add_device(this, this->device_desc, "Real Time Clock");
 	Device* pit = Devices::get_device_by_path("pit.programmable_interrupt_timer.1");
 	if (pit != nullptr) {
-		logfk(KERNEL, "Installing time update on tick 1000");
+		logfk(KERNEL, "Installing time update on tick 1000\n");
 		pit_driver* d = static_cast<pit_driver*>(pit->get_driver());
 		//TODO: This might cause latency with other interrupts. Figure out how to do this asyncronously
 		d->on_tick(100, update_time_cb);
