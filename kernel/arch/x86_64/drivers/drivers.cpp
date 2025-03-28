@@ -7,7 +7,6 @@
 #include<kernel/drivers/driver_api.hpp>
 #include<kernel.h>
 #include<kernel/drivers/driver.hpp>
-#include<kernel/drivers/initrd.hpp>
 #include<cstdint>
 #include<vector.hpp>
 
@@ -43,14 +42,6 @@ namespace Drivers {
 		return nullptr;
 	}
 
-	initrd_driver* get_initrd_driver() {
-		for (int i = 0; i < drivers().length() ; i++) {
-			driver_t* d = drivers().at(i);
-			if (d->desc == FILESYSTEM_DRIVER) return static_cast<initrd_driver*>(d);
-		}
-		return nullptr;
-	}
-
 	ps2_driver* get_ps2_driver() {
 		for (int i = 0; i < drivers().length() ; i++) {
 			driver_t* d = drivers().at(i);
@@ -71,10 +62,6 @@ namespace Drivers {
 		auto rtc = get_rtc_driver();
 		if (rtc != nullptr) rtc->install();
 		else logfk(ERROR, "Could not find rtc driver during initialize!\n");
-
-		auto initrd = get_initrd_driver();
-		if (initrd != nullptr) initrd->install();
-		else logfk(ERROR, "Could not find initrd driver during initialize!\n");
 	}
 
 	void load_drivers() {
@@ -86,9 +73,6 @@ namespace Drivers {
 
 		rtc_driver* rtc = new rtc_driver();
 		drivers().push_back(rtc);
-
-		initrd_driver* tfs = new initrd_driver();
-		drivers().push_back(tfs);
 
 		//Finish initialization of Console device and framebuffer_driver
 		framebuffer_driver* fb = &FrameBuffer::driver();

@@ -3,6 +3,7 @@
 #include<kernel/vfs/vfs.hpp>
 #include<kernel/drivers/fs_driver.hpp>
 #include<kernel/drivers/driver_api.hpp>
+#include<kernel/initrd.hpp>
 #include<kernel.h>
 #include<string.h>
 
@@ -38,11 +39,15 @@ namespace VFS {
 		// since one can mount *something* ontop of something else
 		// otherwise this causes a memory leak
 		// or just delete the subtree
-		logfk(KERNEL, "Mounting %s within VFS\n", fs.mountpoint->name);
+		//logfk(KERNEL, "Mounting %s within VFS\n", fs.mountpoint->name);
 		if (strcmp(fs.mountpoint->name, "/")) {
+			//TODO: don't do this on normal mounts. If you unmount /, it will not restore the tree underneath
+			delete vfs().root;
 			vfs().root = fs.mountpoint;
 		} else {
 			vnode_t* mountpoint_vnode = lookup(fs.path);
+			//TODO: don't do this on normal mounts. If you unmount /, it will not restore the tree underneath
+			delete mountpoint_vnode;
 			*mountpoint_vnode = *(fs.mountpoint);
 		}
 	}
@@ -60,7 +65,7 @@ namespace VFS {
 	void init() {
 		//Create our '/' vnode and attach it
 		vnode_t* root = prepare_sysroot();
-		mount(root, Drivers::get_initrd_driver(), "/");
+		mount(root, Initrd::driver, "/");
 	}
 
 	vector<char*>* split_path(char* path) {

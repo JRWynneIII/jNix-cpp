@@ -10,5 +10,5 @@ public:
 	virtual void install() = 0;
 	virtual void write(uint8_t* data, uint64_t ino) = 0;
 	virtual uint8_t* read(uint64_t ino) = 0;
-	virtual vnode_t* mount(uintptr_t ptr) = 0;
+	virtual void mount() = 0;
 };

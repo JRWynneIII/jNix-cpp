@@ -13,6 +13,7 @@
 #include<kernel/devices/device_api.hpp>
 #include<kernel/monitor.hpp>
 #include<kernel/vfs/vfs.hpp>
+#include<kernel/initrd.hpp>
 
 // DO NOT REMOVE
 extern "C" {
@@ -94,6 +95,11 @@ extern "C" void kmain(void) {
 	logfk(KERNEL, "Initializing drivers...\n");
 	Drivers::init();
 	logfk(KERNEL, "Driver initialization complete\n");
+	logfk(KERNEL, "Initializing initrd\n");
+	Initrd::init();
+	logfk(KERNEL, "Mounting initrd on /\n");
+	Initrd::mount();
+	logfk(KERNEL, "Initrd initialization is complete\n");
 
 	//Devices::dump_device_tree();
 	int64_t boottime = boot_time_req.response->boot_time;

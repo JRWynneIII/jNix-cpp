@@ -15,7 +15,7 @@ namespace {
 }
 
 initrd_driver::initrd_driver() {
-	logfk(KERNEL, "Loading initrd driver\n");
+	this->enabled = false;
 	this->desc = FILESYSTEM_DRIVER;
 	this->set_name("initrd");
 	this->headers = new vector<initrd_header_t*>();
@@ -28,13 +28,12 @@ initrd_driver::~initrd_driver() {
 }
 
 void initrd_driver::install() {
-	logfk(KERNEL, "Installing initrd driver\n");
 	if (module_req.response != nullptr) {
 		for (uint64_t i = 0 ; i < module_req.response->module_count; i++) {
 			struct limine_file* mod = module_req.response->modules[i];
-			logfk(INFO, "Module %d path: %s\n", i, mod->path);
-			logfk(INFO, "Module %d size: %d\n", i, mod->size);
-			logfk(INFO, "Module %d cmdline %s\n", i, mod->cmdline);
+			//logfk(INFO, "Module %d path: %s\n", i, mod->path);
+			//logfk(INFO, "Module %d size: %d\n", i, mod->size);
+			//logfk(INFO, "Module %d cmdline %s\n", i, mod->cmdline);
 			if (strcmp(mod->cmdline, "initrd")) {
 				logfk(INFO, "Found initrd; proceeding with install and mount...\n");
 				this->address = mod->address;
@@ -42,7 +41,7 @@ void initrd_driver::install() {
 				break;
 			}
 		}
-		this->mount(this->address);
+		this->enabled = true;
 	} else {
 		logfk(ERROR, "Invalid response from limine: module_req\n");
 	}
@@ -85,8 +84,7 @@ void initrd_driver::dump_file_headers() {
 	}
 }
 
-vnode_t* initrd_driver::mount(uintptr_t ptr) {
-	logfk(KERNEL, "Mounting initrd filesystem found at %x\n", this->address);
+void initrd_driver::mount() {
 	uint64_t idx = 0;
 	initrd_header_t* cur = read_header(idx);
 	idx++;
@@ -96,8 +94,6 @@ vnode_t* initrd_driver::mount(uintptr_t ptr) {
 		cur = read_header(idx);
 		idx++;
 	}
-
-	//this->dump_file_headers();
 
 	//Create '/' vnode. This will be our VFS's root vnode that everything is built off of. 
 	// This vnode will replace the "/" vnode in the VFS. 
@@ -165,8 +161,6 @@ vnode_t* initrd_driver::mount(uintptr_t ptr) {
 
 		inode_num++;
 	}
-
-	logfk(KERNEL, "Finished mount of initrd\n");
 
 	VFS::mount(root_vnode, this, "/");
 }

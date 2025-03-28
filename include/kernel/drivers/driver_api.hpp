@@ -15,6 +15,5 @@ namespace Drivers {
 	ps2_driver* get_ps2_driver();
 	pit_driver* get_timer_driver();
 	rtc_driver* get_rtc_driver();
-	initrd_driver* get_initrd_driver();
 	framebuffer_driver* get_framebuffer_driver();
 }

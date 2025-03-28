@@ -28,7 +28,7 @@ public:
 	virtual void install();
 	virtual void write(uint8_t* data, uint64_t ino);
 	virtual uint8_t* read(uint64_t ino);
-	virtual vnode_t* mount(uintptr_t ptr);
+	virtual void mount();
 	virtual void initrd_driver::irq_handler(struct registers* r);
 	void initrd_driver::dump_file_headers();
 };
