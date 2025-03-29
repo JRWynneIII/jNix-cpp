@@ -1,17 +1,14 @@
+#include<climits>
 #include<kernel/vfs/inode.hpp>
 #include<kernel/vfs/vnode.hpp>
 #include<kernel/vfs/vfs.hpp>
+#include<kernel/vfs/descriptor.hpp>
 #include<kernel/drivers/fs_driver.hpp>
 #include<kernel/drivers/driver_api.hpp>
 #include<kernel/initrd.hpp>
 #include<kernel.h>
 #include<string.h>
 
-typedef struct fs_ident {
-	fs_driver_t* driver;
-	vnode_t* mountpoint;
-	char* path;
-} fs_ident_t;
 
 namespace VFS {
 	VFS_t& vfs() {
@@ -19,45 +16,88 @@ namespace VFS {
 		return *v;
 	}
 
-	vector<fs_ident_t>& mountpoints() {
-		static vector<fs_ident_t>* m = new vector<fs_ident_t>();
+	vector<fs_ident_t*>& mountpoints() {
+		static vector<fs_ident_t*>* m = new vector<fs_ident_t*>();
 		return *m;
+	}
+
+	vector<file_descriptor_t*>& open_fds() {
+		static vector<file_descriptor_t*>* f = new vector<file_descriptor_t*>();
+		return *f;
+	}
+
+	file_descriptor_t* get_fd(int fd) {
+		for (auto f : open_fds()) {
+			if (f->get_id() == fd) return f;
+		}
+		return nullptr;
+	}
+
+	int64_t find_free_fd() {
+		for (int i = 0; i < INT_MAX; i++) {
+			if (get_fd(i) == nullptr) return i;
+		}
+		return -1;
+	}
+
+	file_descriptor_t* create_new_fd(vnode_t* vnode, uint64_t pid, int flags, int mode) {
+		int64_t id = find_free_fd();
+		if (id == -1) {
+			logfk(ERROR, "Out of file descriptors!\n");
+			halt();
+		}
+		printfk("Found free fd %d\n", id);
+
+		file_descriptor_t* fd = new file_descriptor_t(id, pid, vnode, flags, mode);
+		vnode->add_stream(fd);
+		return fd;
+	}
+
+	int destroy_fd(file_descriptor_t* fd) {
+		open_fds().del_by_value(fd);
+		//TODO: This might be a double-free for fd; need to check vector implementation
+		delete fd;
+		return 0;
 	}
 
 	vnode_t* prepare_sysroot() {
 		logfk(KERNEL, "Creating VFS entry for /\n");
 		//Create the root inode, This will need to be filled in with data
 		//when you attach a real filesystem
-		inode_t* root_inode = new inode_t(0,0,777,0,0,0,sizeof(inode_t),1,1,1,1,4096, IDIR);
+		inode_t* root_inode = new inode_t(nullptr,0,777,0,0,0,sizeof(inode_t),1,1,1,1,4096, IDIR);
 		vnode_t* root_vnode = new vnode_t("/", root_inode);
 
 		return root_vnode;
 	}
 
-	void attach(fs_ident_t fs) {
+	void attach(fs_ident_t* fs) {
 		//TODO: keep track of multiple subtrees in the vfs tree per vnode, 
 		// since one can mount *something* ontop of something else
 		// otherwise this causes a memory leak
 		// or just delete the subtree
 		//logfk(KERNEL, "Mounting %s within VFS\n", fs.mountpoint->name);
-		if (strcmp(fs.mountpoint->name, "/")) {
+		if (strcmp(fs->mountpoint->name, "/")) {
 			//TODO: don't do this on normal mounts. If you unmount /, it will not restore the tree underneath
 			delete vfs().root;
-			vfs().root = fs.mountpoint;
+			vfs().root = fs->mountpoint;
 		} else {
-			vnode_t* mountpoint_vnode = lookup(fs.path);
+			vnode_t* mountpoint_vnode = lookup(fs->path);
 			//TODO: don't do this on normal mounts. If you unmount /, it will not restore the tree underneath
 			delete mountpoint_vnode;
-			*mountpoint_vnode = *(fs.mountpoint);
+			*mountpoint_vnode = *(fs->mountpoint);
 		}
 	}
 
+	void mount(fs_ident_t* fs) {
+		attach(fs);
+		mountpoints().push_back(fs);
+	}
+
 	void mount(vnode_t* vnode, fs_driver_t* driver, char* path) {
-		fs_ident_t fs = {
-			driver,
-			vnode,
-			path
-		};
+		fs_ident_t* fs = new fs_ident_t;
+		fs->driver = driver;
+		fs->mountpoint = vnode;
+		fs->path = path;
 		attach(fs);
 		mountpoints().push_back(fs);
 	}
@@ -99,6 +139,55 @@ namespace VFS {
 		if (dir != nullptr) return dir->get_children();
 		return nullptr;
 	}
+
+	//TODO Implement errno (https://man7.org/linux/man-pages/man3/errno.3.html) and set errno to posix error codes
+	//TODO: Implement these and start keeping track of file descriptors!
+	//read() appears to work, but doesn't really provide what applications will need
+	int open(char* path, int flags, int mode) {
+		//PID of 0 == kernel
+		vnode_t* vnode = stat(path);
+		if (vnode == nullptr) return -1; //File not found
+		file_descriptor_t* fd = create_new_fd(vnode, 0, flags, mode);
+		open_fds().push_back(fd);
+		return fd->get_id();
+	}
+
+	//TODO Implement errno (https://man7.org/linux/man-pages/man3/errno.3.html) and set errno to posix error codes
+	int close(int fd) {
+		file_descriptor_t* desc = get_fd(fd);
+		if (desc == nullptr) return -1;
+		return destroy_fd(desc);
+	}
+
+	//TODO Implement errno (https://man7.org/linux/man-pages/man3/errno.3.html) and set errno to posix error codes
+	size_t read(int fd, void* buffer, size_t count) {
+		file_descriptor_t* desc = get_fd(fd);
+		if (desc == nullptr) return 0;
+
+		inode_t* ino = desc->get_vnode()->inode;
+
+		if (ino->type == IDIR) return 0;
+
+		// get the mountpoint associated with the inode
+		fs_ident_t* mp = ino->fs_ident;
+		// call driver's read with the inode and mointpoint data
+		
+		auto ret = mp->driver->read(ino, buffer, count);
+		//Advance the position of the fd `count` bytes
+		desc->seek(ret);
+
+		return ret;
+	}
+
+	//Internal function; not exposed to libc/etc
+	size_t read(inode_t* ino, void* buffer, size_t count) {
+		// get the mountpoint associated with the inode
+		fs_ident_t* mp = ino->fs_ident;
+		// call driver's read with the inode and mointpoint data
+		return mp->driver->read(ino, buffer, count);
+	}
+
+	//TODO: probably need to add fscanf/fread/etc and such to libc/libk
 
 	//TODO: add versions of readdir/lookup/stat/etc for inode number
 

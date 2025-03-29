@@ -16,9 +16,11 @@ int atoi(char* input) {
 		input++;
 	}
 
+	int base = 1;
 	while (input[0] != '\0') {
 		//TODO: Check for overflow?
-		ret *= 10 + (input[0] - '0');
+		ret += (input[0] - '0') * base;
+		base *= 10;
 		input++;
 	}
 	return ret;

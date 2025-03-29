@@ -1,3 +1,4 @@
+#pragma once
 #include<kernel/drivers/initrd.hpp>
 
 namespace Initrd {

@@ -50,7 +50,20 @@ void initrd_driver::install() {
 void initrd_driver::write(uint8_t* data, uint64_t ino) {
 }
 
-uint8_t* initrd_driver::read(uint64_t ino) {
+size_t initrd_driver::read(inode_t* ino, void* buffer, size_t count) {
+	// Get the fully qualified path from VFS
+	// Since the inode number should be the index in the headers vector + 1
+	
+	initrd_header* header = this->headers->at(ino->inode_num - 1);
+	if (header == nullptr) return 0;
+
+	//We're assuming count is in bytes here....
+	if (count > this->parse_size(header->size)) count = this->parse_size(header->size);
+
+
+	uint8_t* data_location = ((uint8_t*)header + 512);
+	memcpy(buffer, data_location, count);
+	return count;
 }
 
 uint64_t initrd_driver::parse_size(uint8_t* input) {
@@ -97,9 +110,15 @@ void initrd_driver::mount() {
 
 	//Create '/' vnode. This will be our VFS's root vnode that everything is built off of. 
 	// This vnode will replace the "/" vnode in the VFS. 
-	inode_t* root_inode = new inode_t(0,0,777,0,0,0,sizeof(inode_t),1,1,1,1,4096, IDIR);
+	fs_ident_t* fs_ident = new fs_ident_t;
+
+	inode_t* root_inode = new inode_t(fs_ident,0,777,0,0,0,sizeof(inode_t),1,1,1,1,4096, IDIR);
 	vnode_t* root_vnode = new vnode_t("/", root_inode);
 	uint64_t inode_num = 1;
+
+	fs_ident->driver = this;
+	fs_ident->mountpoint = root_vnode;
+	fs_ident->path = "/";
 
 	for (auto header : *(this->headers)) {
 		uint64_t size = this->parse_size(header->size);
@@ -123,7 +142,7 @@ void initrd_driver::mount() {
 
 		//Create new inode and vnode objects for our VFS
 		inode_t* ino = new inode_t(
-				0, //Should always be the first index in vfs::mountpoints
+				fs_ident,
 				inode_num,
 				atoi(header->mode),
 				0,

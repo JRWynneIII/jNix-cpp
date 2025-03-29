@@ -37,6 +37,7 @@ public:
 
 namespace VFS {
 	VFS_t& vfs();
+	vector<file_descriptor_t*>& open_fds();
 	vnode_t* pre_mount(char* path);
 	vnode_t* find(vnode_t* root, char* path);
 	void mount(vnode_t* vnode, fs_driver_t* driver, char* path);
@@ -45,4 +46,9 @@ namespace VFS {
 	vector<vnode_t*>* readdir(char* path);
 	vnode_t* stat(char* path);
 	vnode_t* lookup(char* path);
+	//char* get_path_for_inode(uint64_t inode);
+	size_t read(inode_t* ino, void* buffer, size_t count);
+	size_t read(int fd, void* buffer, size_t count);
+	int open(char* path, int flags, int mode);
+	int close(int fd);
 }

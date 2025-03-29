@@ -1,6 +1,19 @@
 #pragma once
 #include<cstdint>
 #include<kernel/devices/device_api.hpp>
+//#include<kernel/vfs/vnode.hpp>
+//#include<kernel/drivers/fs_driver.hpp>
+//#include<kernel/vfs/fs_ident.hpp>
+
+class vnode_t;
+class fs_driver_t;
+
+typedef struct fs_ident {
+	fs_driver_t* driver;
+	vnode_t* mountpoint;
+	char* path;
+} fs_ident_t;
+
 
 typedef enum inode_type {
 	IFILE,
@@ -13,7 +26,7 @@ typedef enum inode_type {
 class inode_t {
 public:
 	//TODO: Maybe this should be a pointer? idk how tho
-	uint64_t fs_ident; 
+	fs_ident_t* fs_ident; 
 	uint64_t inode_num;
 	uint16_t mode;
 	uint64_t ctime;
@@ -44,5 +57,6 @@ public:
 	}
 
 
-	inode_t(uint64_t f, uint64_t i, uint16_t m, uint64_t c, uint64_t mt, uint64_t a, uint64_t s, uint64_t u, uint64_t g, uint64_t l, uint64_t b, uint64_t bs, inode_type_t t) : fs_ident(f), inode_num(i), mode(m), ctime(c), mtime(mt), atime(a), size(s), uid(u), gid(g), nlinks(l), blocks(b), block_size(bs), type(t) {}
+	inode_t(fs_ident_t* f, uint64_t i, uint16_t m, uint64_t c, uint64_t mt, uint64_t a, uint64_t s, uint64_t u, uint64_t g, uint64_t l, uint64_t b, uint64_t bs, inode_type_t t) : fs_ident(f), inode_num(i), mode(m), ctime(c), mtime(mt), atime(a), size(s), uid(u), gid(g), nlinks(l), blocks(b), block_size(bs), type(t) {}
 };
+

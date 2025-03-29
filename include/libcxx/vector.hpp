@@ -160,24 +160,30 @@ public:
 			cur = cur->get_next();
 			count++;
 		}
-		delete cur;
-		this->size--;
+		if (cur != nullptr) {
+			delete cur;
+			this->size--;
+		}
+		if (this->size == 0) {
+			this->head = nullptr;
+			this->tail = nullptr;
+		}
 	}
 
 	void del_by_value(T val) {
 		node<T>* cur = this->head;
 		while(cur != nullptr) {
-			if (val == cur->get_val()) {
-				node<T>* next = cur->get_next(); 
-				delete cur;
-				this->size--;
-				cur = next;
-			} else {
-				cur = cur->get_next();
-			}
+			if (val == cur->get_value()) break;
+			cur = cur->get_next();
 		}
-		delete cur;
-		this->size--;
+		if (cur != nullptr) {
+			delete cur;
+			this->size--;
+		}
+		if (this->size == 0) {
+			this->head = nullptr;
+			this->tail = nullptr;
+		}
 	}
 	
 	void set(uint64_t idx, T value) {

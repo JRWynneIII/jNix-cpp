@@ -23,12 +23,12 @@ private:
 public:
 	initrd_driver();
 	~initrd_driver();
-	uint64_t initrd_driver::parse_size(uint8_t* input);
+	uint64_t parse_size(uint8_t* input);
 	initrd_header_t* read_header(uint64_t idx);
 	virtual void install();
 	virtual void write(uint8_t* data, uint64_t ino);
-	virtual uint8_t* read(uint64_t ino);
+	virtual size_t read(inode_t* ino, void* buffer, size_t count);
 	virtual void mount();
-	virtual void initrd_driver::irq_handler(struct registers* r);
-	void initrd_driver::dump_file_headers();
+	virtual void irq_handler(struct registers* r);
+	void dump_file_headers();
 };

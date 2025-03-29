@@ -16,6 +16,82 @@
 #include<kernel/time.hpp>
 #include<kernel/vfs/vnode.hpp>
 #include<kernel/vfs/vfs.hpp>
+#include<kernel/vfs/descriptor.hpp>
+
+class ListFDCommand : public Command {
+public:
+	ListFDCommand() {}
+	ListFDCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		for (auto i : VFS::open_fds()) {
+			printfk("%s: %d\n", i->get_vnode()->name, i->get_id());
+		}
+	}
+};
+
+class OpenCommand : public Command {
+public:
+	OpenCommand() {}
+	OpenCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		if (args->length() != 2) {
+			logfk(ERROR, "ropen [path] [bytes_to_read]\n");
+			return;
+		}
+		char* path = args->pop_head();
+		char* byte_str = args->pop_head();
+		uint64_t bytes = atoi(byte_str);
+
+		//TODO: Flags and mode are not implemented yet
+		int fd = VFS::open(path, 0, 0);
+
+		if (fd >= 0) {
+			char* buffer = new char[bytes+1];
+			size_t rc = VFS::read(fd, buffer, bytes);
+			if (rc == -1) {
+				logfk(ERROR, "Read failed for: %s, %d\n", path, rc);
+				return;
+			}
+			//Since we don't have a libc that has functions to return EOF, lets just pretty it up
+			buffer[bytes] = '\0';
+			printfk("%s\n", buffer);
+			printfk("Read %d bytes from path: %s\n", rc, path);
+			rc = VFS::close(fd);
+			if (rc != 0) {
+				logfk(ERROR, "Close failed for %s, rc: %d\n", path, rc);
+				return;
+			}
+		} else {
+			logfk(ERROR, "Open failed for: %s, fd: %d\n", path, fd);
+		}
+	}
+};
+
+class ReadCommand : public Command {
+public:
+	ReadCommand() {}
+	ReadCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		if (args->length() != 2) {
+			logfk(ERROR, "read [path] [bytes]\n");
+			return;
+		}
+		char* path = args->pop_head();
+		char* byte_str = args->pop_head();
+		uint64_t bytes = atoi(byte_str);
+		vnode_t* file = VFS::stat(path);
+
+		if (file != nullptr) {
+			char* buffer = new char[bytes+1];
+			size_t rc = VFS::read(file->inode, buffer, bytes);
+			buffer[bytes] = '\0';
+			printfk("%s\n", buffer);
+			printfk("Read %d bytes from inode: %d\n", rc, file->inode->inode_num);
+		} else {
+			logfk(ERROR, "Read failed for: read %s, %d\n", path, bytes);
+		}
+	}
+};
 
 class StatCommand : public Command {
 public:
@@ -286,6 +362,9 @@ namespace Monitor {
 		cmd_list().push_back(new LSBinCommand("lbin"));
 		cmd_list().push_back(new StatCatCommand("statcat"));
 		cmd_list().push_back(new StatCommand("stat"));
+		cmd_list().push_back(new ReadCommand("read"));
+		cmd_list().push_back(new OpenCommand("ropen"));
+		cmd_list().push_back(new ListFDCommand("listfd"));
 		cmd_list().push_back(new HelpCommand("help"));
 
 		while(true) {
