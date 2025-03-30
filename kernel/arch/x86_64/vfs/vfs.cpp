@@ -46,7 +46,6 @@ namespace VFS {
 			logfk(ERROR, "Out of file descriptors!\n");
 			halt();
 		}
-		printfk("Found free fd %d\n", id);
 
 		file_descriptor_t* fd = new file_descriptor_t(id, pid, vnode, flags, mode);
 		vnode->add_stream(fd);

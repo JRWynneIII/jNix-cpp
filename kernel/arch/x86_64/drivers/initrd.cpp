@@ -120,14 +120,27 @@ size_t initrd_driver::write(uint8_t* data, inode_t* ino, uint64_t offset, size_t
 	char* name = header->name;
 
 	if (bytes > (ino->size - offset)) {
+		// Get a temp copy of the old file
+		uint8_t* tmp = new char[ino->size];
+		this->read(ino, tmp, ino->size);
+
+		//Remove the old file from the tracked headers
 		this->remove(header->name);
-		// Set the size to the new expected size
+
+		// Set the size to the new expected size and create a new file
 		ino->size = bytes + offset;
 		this->create(name, ino);
+
+		//Get the new header entry created by this->create()
 		header = this->get_header_by_inode(ino);
+
+		// Copy the old file data to the new location. Does this make it CoW?
+		uint8_t* data_location = ((uint8_t*)header + 512);
+		memcpy(data_location, tmp, ino->size);
+		delete tmp;
 	}
 
-	uint8_t* data_location = ((uint8_t*)header + 512);
+	uint8_t* data_location = ((uint8_t*)header + 512 + offset);
 	memcpy(data_location, data, bytes);
 	return bytes;
 }
