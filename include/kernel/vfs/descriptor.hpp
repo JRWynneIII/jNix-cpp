@@ -14,19 +14,17 @@ public:
 //	file_descriptor_t(uint64_t f) : fd(f) {}
 //	file_descriptor_t(uint64_t f, vnode_t* v) : fd(f), vnode(v) {}
 //	file_descriptor_t(uint64_t f, uint64_t pid) : fd(f), process_id(pid) {}
-	file_descriptor_t(int f, uint64_t pid, vnode_t* v, int fl, int m) : fd(f), process_id(pid), vnode(v), flags(fl), mode(m) {}
+	file_descriptor_t(int f, uint64_t pid, vnode_t* v, int fl, int m) : fd(f), process_id(pid), vnode(v), flags(fl), mode(m) {
+		this->position = 0;
+	}
 	~file_descriptor_t() {}
-	int seek(int64_t bytes) {
+	int64_t seek(int64_t bytes) {
 		if (this->position + bytes > vnode->inode->size) {
 			this->position = vnode->inode->size;
 			return -1;
-		} else if (this->position + bytes > UINT64_MAX) {
-			return -2;
-		} if ((int64_t)(this->position) + bytes < 0) {
-			this->position = 0;
-			return -1;
 		}
 		this->position += bytes;
+		return this->position;
 	};
 	uint64_t get_position() { return this->position; }
 	void set_position(uint64_t p) { this->position = p; }

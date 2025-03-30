@@ -140,9 +140,10 @@ namespace VFS {
 		return nullptr;
 	}
 
-	//TODO Implement errno (https://man7.org/linux/man-pages/man3/errno.3.html) and set errno to posix error codes
-	//TODO: Implement these and start keeping track of file descriptors!
-	//read() appears to work, but doesn't really provide what applications will need
+	//int create(char* path, int mode) {
+
+	//}
+
 	int open(char* path, int flags, int mode) {
 		//PID of 0 == kernel
 		vnode_t* vnode = stat(path);
@@ -153,13 +154,58 @@ namespace VFS {
 	}
 
 	//TODO Implement errno (https://man7.org/linux/man-pages/man3/errno.3.html) and set errno to posix error codes
+	//     Or, change these to return custom error codes
 	int close(int fd) {
 		file_descriptor_t* desc = get_fd(fd);
 		if (desc == nullptr) return -1;
 		return destroy_fd(desc);
 	}
 
-	//TODO Implement errno (https://man7.org/linux/man-pages/man3/errno.3.html) and set errno to posix error codes
+	off_t seek(int fd, uint64_t offset, int whence) {
+		file_descriptor_t* desc = get_fd(fd);
+		if (desc == nullptr) return (off_t)-1;
+
+
+		switch(whence) {
+			case SEEK_SET:
+				if (offset > desc->get_vnode()->inode->size) return (off_t)-1;
+				desc->set_position(offset);
+				break;
+			case SEEK_CUR:
+				if (offset + desc->get_position() > desc->get_vnode()->inode->size) return (off_t)-1;
+				desc->seek(offset);
+				break;
+			case SEEK_END:
+				if (offset + desc->get_vnode()->inode->size > desc->get_vnode()->inode->size) return (off_t)-1;
+				desc->set_position(desc->get_vnode()->inode->size + offset);
+				break;
+			default:
+				return (off_t)-1;
+				break;
+		}
+
+		return desc->get_position();
+	}
+
+	size_t write(int fd, void* buffer, size_t count) {
+		file_descriptor_t* desc = get_fd(fd);
+		if (desc == nullptr) return -1;
+
+		inode_t* ino = desc->get_vnode()->inode;
+
+		if (ino->type == IDIR) return 0;
+
+		// get the mountpoint associated with the inode
+		fs_ident_t* mp = ino->fs_ident;
+		// call driver's read with the inode and mointpoint data
+		
+		auto ret = mp->driver->write(buffer, ino, desc->get_position(), count);
+		//Advance the position of the fd `count` bytes
+		auto sret = desc->seek(ret);
+
+		return ret;
+	}
+
 	size_t read(int fd, void* buffer, size_t count) {
 		file_descriptor_t* desc = get_fd(fd);
 		if (desc == nullptr) return 0;

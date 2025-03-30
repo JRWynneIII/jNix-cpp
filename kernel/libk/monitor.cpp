@@ -18,6 +18,16 @@
 #include<kernel/vfs/vfs.hpp>
 #include<kernel/vfs/descriptor.hpp>
 
+class ListHeadersCommand : public Command {
+public:
+	ListHeadersCommand() {}
+	ListHeadersCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		auto mp = VFS::mountpoints().at(1);
+		auto driver = static_cast<initrd_driver*>(mp->driver);
+		driver->dump_file_headers();
+	}
+};
 class ListFDCommand : public Command {
 public:
 	ListFDCommand() {}
@@ -25,6 +35,40 @@ public:
 	void run(vector<char*>* args) {
 		for (auto i : VFS::open_fds()) {
 			printfk("%s: %d\n", i->get_vnode()->name, i->get_id());
+		}
+	}
+};
+class WriteCommand : public Command {
+public:
+	WriteCommand() {}
+	WriteCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		if (args->length() != 2) {
+			logfk(ERROR, "write [path] [string to write]\n");
+			return;
+		}
+		char* path = args->pop_head();
+		char* byte_str = args->pop_head();
+		size_t bytes = strlen(byte_str);
+
+		//TODO: Flags and mode are not implemented yet
+		int fd = VFS::open(path, 0, 0);
+
+		if (fd >= 0) {
+			//char* buffer = new char[bytes+1];
+			size_t rc = VFS::write(fd, byte_str, bytes);
+			if (rc == -1) {
+				logfk(ERROR, "Write failed for: %s, %d\n", path, rc);
+				return;
+			}
+			printfk("Wrote %d bytes to path: %s\n", rc, path);
+			rc = VFS::close(fd);
+			if (rc != 0) {
+				logfk(ERROR, "Close failed for %s, rc: %d\n", path, rc);
+				return;
+			}
+		} else {
+			logfk(ERROR, "Write failed for: %s, fd: %d\n", path, fd);
 		}
 	}
 };
@@ -53,7 +97,7 @@ public:
 				return;
 			}
 			//Since we don't have a libc that has functions to return EOF, lets just pretty it up
-			buffer[bytes] = '\0';
+			buffer[rc] = '\0';
 			printfk("%s\n", buffer);
 			printfk("Read %d bytes from path: %s\n", rc, path);
 			rc = VFS::close(fd);
@@ -84,7 +128,7 @@ public:
 		if (file != nullptr) {
 			char* buffer = new char[bytes+1];
 			size_t rc = VFS::read(file->inode, buffer, bytes);
-			buffer[bytes] = '\0';
+			buffer[rc] = '\0';
 			printfk("%s\n", buffer);
 			printfk("Read %d bytes from inode: %d\n", rc, file->inode->inode_num);
 		} else {
@@ -363,8 +407,10 @@ namespace Monitor {
 		cmd_list().push_back(new StatCatCommand("statcat"));
 		cmd_list().push_back(new StatCommand("stat"));
 		cmd_list().push_back(new ReadCommand("read"));
+		cmd_list().push_back(new WriteCommand("write"));
 		cmd_list().push_back(new OpenCommand("ropen"));
 		cmd_list().push_back(new ListFDCommand("listfd"));
+		cmd_list().push_back(new ListHeadersCommand("listh"));
 		cmd_list().push_back(new HelpCommand("help"));
 
 		while(true) {

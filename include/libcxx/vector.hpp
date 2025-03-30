@@ -177,6 +177,12 @@ public:
 			cur = cur->get_next();
 		}
 		if (cur != nullptr) {
+			if (cur == this->head) {
+				this->head = cur->get_next();
+			}
+			if (cur == this->tail) {
+				this->tail = cur->get_prev();
+			}
 			delete cur;
 			this->size--;
 		}

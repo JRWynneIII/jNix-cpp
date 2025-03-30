@@ -12,6 +12,8 @@ typedef struct initrd_header {
 	uint8_t mtime[12];
 	uint8_t chksum[8];
 	uint8_t typeflag[1];
+	uint64_t inode_num;
+	bool driver_allocated;
 } initrd_header_t;
 
 class initrd_driver : public fs_driver_t {
@@ -23,12 +25,18 @@ private:
 public:
 	initrd_driver();
 	~initrd_driver();
-	uint64_t parse_size(uint8_t* input);
-	initrd_header_t* read_header(uint64_t idx);
+
 	virtual void install();
-	virtual void write(uint8_t* data, uint64_t ino);
+	virtual void remove(char* path);
+	virtual void create(char* path, inode_t* ino);
+	virtual size_t write(uint8_t* data, inode_t* ino, uint64_t offset, size_t bytes);
 	virtual size_t read(inode_t* ino, void* buffer, size_t count);
 	virtual void mount();
 	virtual void irq_handler(struct registers* r);
+
+	initrd_header_t* get_header_by_inode(inode_t* ino);
+	initrd_header_t* read_header(uint64_t idx);
+	uint64_t parse_size(uint8_t* input);
 	void dump_file_headers();
+	uint8_t* to_octal(uint64_t input);
 };
