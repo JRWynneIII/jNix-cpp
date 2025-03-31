@@ -135,13 +135,13 @@ size_t initrd_driver::write(uint8_t* data, inode_t* ino, uint64_t offset, size_t
 		header = this->get_header_by_inode(ino);
 
 		// Copy the old file data to the new location. Does this make it CoW?
-		uint8_t* data_location = ((uint8_t*)header + 512);
-		memcpy(data_location, tmp, ino->size);
+		uint8_t* old_data_location = ((uint8_t*)header + 512);
+		memcpy(old_data_location, tmp, ino->size);
 		delete tmp;
 	}
 
-	uint8_t* data_location = ((uint8_t*)header + 512 + offset);
-	memcpy(data_location, data, bytes);
+	uint8_t* new_data_location = ((uint8_t*)header + 512 + offset);
+	memcpy(new_data_location, data, bytes);
 	return bytes;
 }
 

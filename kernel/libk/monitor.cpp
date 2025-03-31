@@ -17,6 +17,23 @@
 #include<kernel/vfs/vnode.hpp>
 #include<kernel/vfs/vfs.hpp>
 #include<kernel/vfs/descriptor.hpp>
+#include<kernel/process/elf.hpp>
+
+class ReadELFCommand : public Command {
+public:
+	ReadELFCommand() {}
+	ReadELFCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		Executable e = Executable(args->pop_head());
+		e.dump_header();
+		printfk("Press any key to continue\n");
+		getch();
+		e.dump_program_table();
+		printfk("Press any key to continue\n");
+		getch();
+		e.dump_section_table();
+	}
+};
 
 class ListHeadersCommand : public Command {
 public:
@@ -411,6 +428,7 @@ namespace Monitor {
 		cmd_list().push_back(new OpenCommand("ropen"));
 		cmd_list().push_back(new ListFDCommand("listfd"));
 		cmd_list().push_back(new ListHeadersCommand("listh"));
+		cmd_list().push_back(new ReadELFCommand("readelfh"));
 		cmd_list().push_back(new HelpCommand("help"));
 
 		while(true) {
