@@ -14,6 +14,7 @@
 #include<kernel/monitor.hpp>
 #include<kernel/vfs/vfs.hpp>
 #include<kernel/initrd.hpp>
+#include<kernel/scheduler/scheduler.hpp>
 
 // DO NOT REMOVE
 extern "C" {
@@ -100,6 +101,9 @@ extern "C" void kmain(void) {
 	logfk(KERNEL, "Mounting initrd on /\n");
 	Initrd::mount();
 	logfk(KERNEL, "Initrd initialization is complete\n");
+	logfk(KERNEL, "Initializing Scheduler\n");
+	Kernel::Scheduler::init();
+	logfk(KERNEL, "Scheduler initialization is complete\n");
 
 	//Devices::dump_device_tree();
 	int64_t boottime = boot_time_req.response->boot_time;

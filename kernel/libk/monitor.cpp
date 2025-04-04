@@ -18,20 +18,107 @@
 #include<kernel/vfs/vfs.hpp>
 #include<kernel/vfs/descriptor.hpp>
 #include<kernel/process/elf.hpp>
+#include<kernel/process/process.hpp>
+#include<kernel/scheduler/scheduler.hpp>
+
+class PSCommand : public Command {
+public:
+	PSCommand() {}
+	PSCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		vector<process_t*> procs = Kernel::Scheduler::process_queue();
+		if (procs.length() == 0) {
+			printfk("No process in queue\n");
+			return;
+		}
+		for (auto i : procs) {
+			printfk("%d: %s\n", i->getPID(), i->getCmdline());
+		}
+	}
+};
+
+class SymbolsCommand : public Command {
+public:
+	SymbolsCommand() {}
+	SymbolsCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		if (args->length() >= 1) {
+			char* path = args->pop_head();
+			if (VFS::stat(path) != nullptr) {
+				Executable e = Executable(path);
+				e.dump_symbol_table();
+			} else {
+				logfk(ERROR, "Invalid path %s\n", path);
+			}
+		} else {
+			logfk(ERROR, "symbols [path]\n");
+		}
+	}
+};
+
+class SectionsCommand : public Command {
+public:
+	SectionsCommand() {}
+	SectionsCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		if (args->length() >= 1) {
+			char* path = args->pop_head();
+			if (VFS::stat(path) != nullptr) {
+				Executable e = Executable(path);
+				e.dump_section_table();
+			} else {
+				logfk(ERROR, "Invalid path %s\n", path);
+			}
+		} else {
+			logfk(ERROR, "sections [path]\n");
+		}
+	}
+};
+
+class ProgramTableCommand : public Command {
+public:
+	ProgramTableCommand() {}
+	ProgramTableCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		if (args->length() >= 1) {
+			char* path = args->pop_head();
+			if (VFS::stat(path) != nullptr) {
+				Executable e = Executable(path);
+				e.dump_program_table();
+			} else {
+				logfk(ERROR, "Invalid path %s\n", path);
+			}
+		} else {
+			logfk(ERROR, "programtable [path]\n");
+		}
+	}
+};
 
 class ReadELFCommand : public Command {
 public:
 	ReadELFCommand() {}
 	ReadELFCommand(char* s) : Command(s) {}
 	void run(vector<char*>* args) {
-		Executable e = Executable(args->pop_head());
-		e.dump_header();
-		printfk("Press any key to continue\n");
-		getch();
-		e.dump_program_table();
-		printfk("Press any key to continue\n");
-		getch();
-		e.dump_section_table();
+		if (args->length() >= 1) {
+			char* path = args->pop_head();
+			if (VFS::stat(path) != nullptr) {
+				Executable e = Executable(path);
+				e.dump_header();
+				printfk("Press any key to continue\n");
+				getch();
+				e.dump_program_table();
+				printfk("Press any key to continue\n");
+				getch();
+				e.dump_section_table();
+				printfk("Press any key to continue\n");
+				getch();
+				e.dump_symbol_table();
+			} else {
+				logfk(ERROR, "Invalid path %s\n", path);
+			}
+		} else {
+			logfk(ERROR, "readelf [path]\n");
+		}
 	}
 };
 
@@ -428,7 +515,11 @@ namespace Monitor {
 		cmd_list().push_back(new OpenCommand("ropen"));
 		cmd_list().push_back(new ListFDCommand("listfd"));
 		cmd_list().push_back(new ListHeadersCommand("listh"));
-		cmd_list().push_back(new ReadELFCommand("readelfh"));
+		cmd_list().push_back(new ReadELFCommand("readelf"));
+		cmd_list().push_back(new SymbolsCommand("symbols"));
+		cmd_list().push_back(new SectionsCommand("sections"));
+		cmd_list().push_back(new ProgramTableCommand("programtable"));
+		cmd_list().push_back(new PSCommand("ps"));
 		cmd_list().push_back(new HelpCommand("help"));
 
 		while(true) {
