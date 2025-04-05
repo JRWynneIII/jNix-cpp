@@ -1,6 +1,7 @@
 #pragma once
 #include<kernel/process/elf.hpp>
 #include<kernel/vfs/descriptor.hpp>
+#include<kernel/memory.h>
 #include<vector.hpp>
 
 typedef enum proc_priority {
@@ -78,6 +79,12 @@ typedef enum process_state {
 
 class process_t {
 private:
+	//Page table structure
+	pml4_dir_t* pml4;
+	pdp_dir_t* pdp;
+	pd_dir_t* pd;
+	pt_dir_t* pt;
+
 	context_t* context;
 	bool is_kernel_proc;
 	proc_priority_t priority;
@@ -120,6 +127,7 @@ public:
 
 	void allocate_stack();
 	void load();
+	void setup_proc_page_table();
 	void run();
 
 	void pause();
@@ -128,4 +136,5 @@ public:
 	void stop();
 	void unload();
 	void free_stack();
+	void destroy_proc_page_table();
 };

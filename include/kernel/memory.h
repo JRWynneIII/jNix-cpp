@@ -98,6 +98,12 @@ typedef struct pt_dir {
 	pt_entry_t pages[512];
 } __attribute__((aligned(PAGE_SIZE_BYTES))) pt_dir_t;
 	
+typedef union page_map {
+	pml4_dir* pml4;
+	pdp_dir* pdp;
+	pd_dir* pd;
+	pt_dir* pt;
+} page_map_u;
 
 struct frame_t {
 	// Phys and virt addresses cached for convenience sake

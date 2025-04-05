@@ -182,6 +182,12 @@ public:
 	void process_program_tbl();
 	void process_section_tbl();
 	void process_symbol_tbl();
+	//Returns a pointer to the section itself 
+	void* get_section_by_name(char* name);
+
+	void load_bss_shf_alloc();
+
+	//calls all other 'load' funcs
 	void load();
 	void unload();
 	void kill(uint64_t sig);

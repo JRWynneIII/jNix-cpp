@@ -12,6 +12,10 @@
 namespace Memory {
 	namespace Paging {
 		pml4_dir_t* pml4_dir;
+		pdp_dir_t*  cur_pdp_dir;
+		pd_dir_t*   cur_pd_dir;
+		pt_dir_t*   cur_pt_dir;
+
 		slab_t* slab_head;
 		slab_t* get_slab_head() { return slab_head; }
 		
@@ -47,23 +51,89 @@ namespace Memory {
 			}
 			// TODO: invalidate page?
 			// 	do we really need to do that when we are tracking free slabs?
+			// 	Yes, because when we have processes, we want to be able to reuse unused kernel 
+			// 	pages in user space
 		}
 
-		uintptr_t alloc_dir_entry() {
-			// TODO: This might cause page faults if pages aren't allocated for these addresses
+		//TODO: Modify this to take a pointer to pdp/pd/pt
+		//NOTE: Memory::Paging::pml4_dir should ALWAYS point to the kernel's pml4 table
+		//	Maybe i'm approaching this wrong, i'm not sure we care where each table is, just the 'current' table
+		//	(we can always walk the map to get the other tables). 
+		//
+		//	Track the PML4, current PDP, PD, and PT in a top level pointer
+		//	have alloc_new_table_or_find_free_dir_entry([pml4/pdp/pd/pt]_dir_t* table) do:
+		//		table should be (NOT match) one of the global PML4, PDP, PD, PT ptrs
+		//		if we're at the end of the table - 1 (and not the PML4 table), 
+		//			call our frame allocator (basically what alloc_dir_entry
+		//			is right now) to get the next page and map the entry in the existing table
+		//			then update the global pointer for that table to point to the new one
+		//		else 
+		//			return the address of the next entry in that table
+		//
+		//
+		uintptr_t alloc_new_frame() {
 			uintptr_t base = Memory::usable_memory_regions[0].base;
 			// Don't override last_dir_alloc if its already set
 			static uintptr_t end_dir_addr = end_dir_addr ? end_dir_addr : base;
 
 			void* old_base = end_dir_addr;
-			end_dir_addr += 64;
+			end_dir_addr += 4096;
 			return old_base; 
 		}
+
+		uintptr_t alloc_new_table_or_next_entry(page_map_u table) {
+			static uint64_t pml4_idx = 0;
+			static uint64_t pdp_idx = 0;
+			static uint64_t pd_idx = 0;
+			static uint64_t pt_idx = 0;
+
+			if (table.pml4 != nullptr) {
+				pml4_idx++;
+				return &(pml4_dir->dir[pml4_idx]);
+			} else if (table.pdp != nullptr) {
+				if (pdp_idx == 512) {
+					uintptr_t new_frame = alloc_new_frame();
+					pdp_idx = 0;
+					cur_pdp_dir = new_frame;
+				}
+				return &(cur_pdp_dir->dir[pdp_idx]);
+			} else if (table.pd != nullptr) {
+				if (pd_idx == 512) {
+					uintptr_t new_frame = alloc_new_frame();
+					pd_idx = 0;
+					cur_pd_dir = new_frame;
+				}
+				return &(cur_pd_dir->dir[pd_idx]);
+			} else if (table.pt != nullptr) {
+				if (pt_idx == 512) {
+					uintptr_t new_frame = alloc_new_frame();
+					pt_idx = 0;
+					cur_pt_dir = new_frame;
+				}
+				return &(cur_pt_dir->pages[pt_idx]);
+			}
+			//uintptr_t ret = nullptr;
+			return reinterpret_cast<uintptr_t>(nullptr);
+		}
+		
+	//	uintptr_t alloc_dir_entry() {
+	//		// TODO: This might cause page faults if pages aren't allocated for these addresses
+	//		uintptr_t base = Memory::usable_memory_regions[0].base;
+	//		// Don't override last_dir_alloc if its already set
+	//		static uintptr_t end_dir_addr = end_dir_addr ? end_dir_addr : base;
+
+	//		void* old_base = end_dir_addr;
+	//		end_dir_addr += 64;
+	//		return old_base; 
+	//	}
 
 		pml4_entry_t* find_or_create_pml4_entry(pml4_entry_t* address, uint64_t offset) {
 			pml4_entry_t* entry = (pml4_entry_t*)(address + offset);
 			if (!entry->present) {
-				uintptr_t pdp_addr = alloc_dir_entry();
+				page_map_u table;
+				table.pdp = cur_pdp_dir;
+				uintptr_t pdp_addr = alloc_new_table_or_next_entry(table);
+				//uintptr_t pdp_addr = alloc_dir_entry();
 				// Set to all 0's
 				memset(TO_VIRT_ADDR(pdp_addr), 0, sizeof(pdp_entry_t));
 				//create entry
@@ -83,7 +153,10 @@ namespace Memory {
 			address = TO_VIRT_ADDR(address);
 			pdp_entry_t* entry = ((pdp_dir_t*)address)->dir + offset;
 			if (!entry->present) {
-				uintptr_t pd_addr = alloc_dir_entry();
+				page_map_u table;
+				table.pd = cur_pd_dir;
+				uintptr_t pd_addr = alloc_new_table_or_next_entry(table);
+				//uintptr_t pd_addr = alloc_dir_entry();
 				// Set to all 0's
 				memset(TO_VIRT_ADDR(pd_addr), 0, sizeof(pd_entry_t));
 				//create entry
@@ -103,7 +176,10 @@ namespace Memory {
 			address = TO_VIRT_ADDR(address);
 			pd_entry_t* entry = ((pd_dir_t*)address)->dir + offset;
 			if (!entry->present) {
-				uintptr_t pt_addr = alloc_dir_entry();
+				page_map_u table;
+				table.pt = cur_pt_dir;
+				uintptr_t pt_addr = alloc_new_table_or_next_entry(table);
+				//uintptr_t pt_addr = alloc_dir_entry();
 				// Set to all 0's
 				memset(TO_VIRT_ADDR(pt_addr), 0, sizeof(pt_entry_t));
 				//create entry
@@ -367,6 +443,9 @@ namespace Memory {
 			pml4_ptr &= ~0xFFF; 
 			//pml4_ptr = TO_VIRT_ADDR(pml4_ptr);
 			pml4_dir = (pml4_dir_t*) TO_VIRT_ADDR(pml4_ptr);
+			cur_pdp_dir = alloc_new_frame();
+			cur_pd_dir = alloc_new_frame();
+			cur_pt_dir = alloc_new_frame();
 			//Allocate the first page and set the slab_head
 			//slab_head = create_new_page();
 			slab_head = create_new_pages(1);
