@@ -109,6 +109,8 @@ struct frame_t {
 	// Phys and virt addresses cached for convenience sake
 	uintptr_t phys_addr;
 	uintptr_t virt_addr;
+	bool is_readonly;
+	bool is_user;
 };
 
 typedef struct slab_t;
@@ -120,6 +122,7 @@ struct slab_t {
 	slab_t* previous;
 	uint64_t size; //bytes
 	bool is_free;
+	bool is_readonly;
 };
 
 typedef struct mem_region;
