@@ -4,7 +4,7 @@
 #include<kernel.h>
 
 namespace Memory {
-	namespace Paging {
+	namespace Allocation {
 		void kfree(void* vaddr);
 		void* kalloc(uint64_t objsize, uint64_t num);
 	}
@@ -19,13 +19,13 @@ private:
 	uint64_t cur_idx = 0;
 public:
 	ptr_t<T>() {
-		this->ptr = (T*)Memory::Paging::kalloc(sizeof(T), 1);
+		this->ptr = (T*)Memory::Allocation::kalloc(sizeof(T), 1);
 		this->end = sizeof(T);
 		this->num_elements = 1;
 	}
 
 	ptr_t<T>(size_t size) {
-		T* p = (T*)Memory::Paging::kalloc(size, 1);
+		T* p = (T*)Memory::Allocation::kalloc(size, 1);
 		this->ptr = p;
 		this->end = size;
 		this->num_elements = size / sizeof(T);
@@ -67,7 +67,7 @@ public:
 	}
 
 	~ptr_t<T>() {
-		Memory::Paging::kfree(this->ptr);
+		Memory::Allocation::kfree(this->ptr);
 	}
 
 	// Use this method when your ptr_t is itself a ptr otherwise, the [] operator should work

@@ -38,7 +38,7 @@ namespace Memory {
 		logfk(KERNEL, "Unknown memory: %u\n", unknown_mem_bytes);
 	}
 
-	namespace Paging {
+	namespace Allocation {
 		void dump_slab_list() {
 			slab_t* cur = get_slab_head();
 			int idx = 0;

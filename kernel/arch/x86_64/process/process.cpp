@@ -54,7 +54,7 @@ void process_t::setup_proc_page_table() {
 
 uintptr_t process_t::calloc(uint64_t bytes, bool readonly, bool executable) {
 	//ualloc size, get ptr
-	uintptr_t ptr = Memory::Paging::uallocate(bytes, 1, readonly, executable, false);
+	uintptr_t ptr = Memory::Allocation::uallocate(bytes, 1, readonly, executable, false);
 	//zero out entry
 	for (int i = 0; i < bytes; i++) reinterpret_cast<uint8_t*>(ptr)[i] = 0;
 	//use ptr to add entry to this->pml4
@@ -66,7 +66,7 @@ uintptr_t process_t::calloc(uint64_t bytes, bool readonly, bool executable) {
 	};
 	
 	//This will map the same virtual address in kernel space to user space....
-	Memory::Paging::map_address(ptr, TO_PHYS_ADDR(ptr), map, readonly, executable, true);
+	Memory::VMM::map_address(ptr, TO_PHYS_ADDR(ptr), map, readonly, executable, true);
 }
 
 //Process preparation

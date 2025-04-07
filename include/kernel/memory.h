@@ -151,19 +151,33 @@ namespace Memory {
 	extern uint64_t kernel_physical_addr_base;
 	extern uint64_t kernel_virtual_addr_base;
 	extern mem_region usable_memory_regions[7];
-	namespace Paging {
+	namespace VMM {
+		extern pml4_dir_t* pml4_dir;
+		extern pdp_dir_t* cur_pdp_dir;
+		extern pd_dir_t* cur_pd_dir;
+		extern pt_dir_t* cur_pt_dir;
+		void init();
+		uintptr_t alloc_new_frame();
+		uintptr_t alloc_new_table_or_next_entry(page_map_t table);
+		void create_page_table_entry(frame_t* f, pml4_dir_t* pml4);
+		void create_page_table_entry(frame_t* f, page_map_t map);
+		void map_address(uintptr_t virt_addr, uintptr_t phys_addr, page_map_t map, bool readonly, bool executable, bool isuser);
+		pt_entry_t* lookup_address(uintptr_t virt_addr);
+	}
+	namespace Allocation {
 		void dump_slab_list();
 		slab_t* get_slab_head();
 		void kfree(void* vaddr);
 		void ufree(void* vaddr);
 		void* kallocate(uint64_t objsize, uint64_t num, bool align=false);
 		void* uallocate(uint64_t objsize, uint64_t num, bool readonly, bool executable, bool align=false);
-		void map_address(uintptr_t virt_addr, uintptr_t phys_addr, page_map_t map, bool readonly, bool executable, bool isuser);
+		void* kalloc(uint64_t objsize, uint64_t num);
+		void* ualloc(uint64_t sizebytes, bool readonly, bool executable);
+
 		void init();
 		void test();
 		void test_operators();
 		void ptr_t_test();
-		void* kalloc(uint64_t objsize, uint64_t num);
 	}
 }
 
@@ -171,7 +185,7 @@ namespace Memory {
 //God i hate defining functions inside headers
 template<typename T>
 ptr_t<T> kmalloc(uint64_t sizebytes) {
-	void* ptr = Memory::Paging::kallocate(sizebytes, 1);
+	void* ptr = Memory::Allocation::kallocate(sizebytes, 1);
 	return ptr_t<T>((T)ptr, sizebytes);
 
 }

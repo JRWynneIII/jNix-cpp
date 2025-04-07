@@ -420,7 +420,7 @@ public:
 	SlabListCommand() {}
 	SlabListCommand(char* s) : Command(s) {}
 	void run(vector<char*>* args) {
-		Memory::Paging::dump_slab_list();
+		Memory::Allocation::dump_slab_list();
 	}
 };
 
@@ -438,7 +438,7 @@ public:
 	PagingTestCommand() {}
 	PagingTestCommand(char* s) : Command(s) {}
 	void run(vector<char*>* args) {
-		Memory::Paging::test();
+		Memory::Allocation::test();
 	}
 };
 
