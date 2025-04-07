@@ -26,14 +26,18 @@ process_t::~process_t() {
 	delete this->fds;
 	delete this->tss;
 	delete this->context;
+	delete this->pml4;
+	delete this->pdp;
+	delete this->pd;
+	delete this->pt;
 }
 
 void process_t::setup_proc_page_table() {
 	// Create a new page directory/pml4 structure thats mapped in kernel space (so.....malloc?)
-//	this->pml4 = new pml4_dir_t;
-//	this->pdp = new pdp_dir_t;
-//	this->pd = new pd_dir_t;
-//	this->pt = new pt_dir_t;
+	this->pml4 = new pml4_dir_t;
+	this->pdp = new pdp_dir_t;
+	this->pd = new pd_dir_t;
+	this->pt = new pt_dir_t;
 	// Get current page table structure
 	uintptr_t cur_pml4_ptr;
 	asm volatile("mov %%cr3, %0" : "=r"(cur_pml4_ptr));
@@ -48,6 +52,57 @@ void process_t::setup_proc_page_table() {
 	// we need to ensure that all allocations after swapping CR3, are for the process' virtual memory space ONLY
 }
 
+uintptr_t process_t::calloc(uint64_t bytes, bool readonly, bool executable) {
+	//ualloc size, get ptr
+	uintptr_t ptr = Memory::Paging::uallocate(bytes, 1, readonly, executable, false);
+	//zero out entry
+	for (int i = 0; i < bytes; i++) reinterpret_cast<uint8_t*>(ptr)[i] = 0;
+	//use ptr to add entry to this->pml4
+	page_map_t map = {
+		.pml4 = this->pml4,
+		.pdp = this->pdp,
+		.pd = this->pd,
+		.pt = this->pt
+	};
+	
+	//This will map the same virtual address in kernel space to user space....
+	Memory::Paging::map_address(ptr, TO_PHYS_ADDR(ptr), map, readonly, executable, true);
+}
+
+//Process preparation
+void process_t::allocate_stack() {}
+
+void process_t::load() {
+	this->executable->load();
+	// Make sure that the pages allocated
+	// for the process are User space, and the appropriate r/w/x perms
+}
+
+//process_t state control
+void process_t::run() {
+	this->executable->execute();
+	this->state = RUNNING;
+}
+void process_t::pause() {
+	this->state = PAUSED;
+}
+void process_t::resume() {
+	this->state = RUNNING;
+}
+void process_t::stop() {
+	//TODO: Implement signals for kill?
+	this->executable->kill(9);
+	this->state = STOPPING;
+}
+
+//process_t cleanup
+void process_t::unload() {
+	this->executable->unload();
+}
+void process_t::free_stack() {}
+
+
+//Getters/setters
 uint64_t process_t::getPID() { return this->pid; }
 
 void process_t::setPriority(proc_priority_t p) { this->priority = p; }
@@ -81,36 +136,3 @@ char* process_t::getCmdline() { return this->cmdline; }
 void process_t::set_state(process_state_t s) { this->state = s; }
 
 process_state_t process_t::get_state() { return this->state; }
-
-//process_t preparation
-void process_t::allocate_stack() {}
-
-void process_t::load() {
-	this->executable->load();
-	// Make sure that the pages allocated
-	// for the process are User space, and the appropriate r/w/x perms
-}
-
-//process_t state control
-void process_t::run() {
-	this->executable->execute();
-	this->state = RUNNING;
-}
-void process_t::pause() {
-	this->state = PAUSED;
-}
-void process_t::resume() {
-	this->state = RUNNING;
-}
-void process_t::stop() {
-	//TODO: Implement signals for kill?
-	this->executable->kill(9);
-	this->state = STOPPING;
-}
-
-//process_t cleanup
-void process_t::unload() {
-	this->executable->unload();
-}
-void process_t::free_stack() {}
-

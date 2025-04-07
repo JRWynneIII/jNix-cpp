@@ -21,6 +21,17 @@
 #include<kernel/process/process.hpp>
 #include<kernel/scheduler/scheduler.hpp>
 
+class AlignCommand : public Command {
+public:
+	AlignCommand() {}
+	AlignCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		pml4_dir_t* tmp = new pml4_dir_t;
+		pdp_dir_t* tmp2 = new pdp_dir_t;
+		printfk("Allocated %x and %x\n", tmp, tmp2);
+	}
+};
+
 class PSCommand : public Command {
 public:
 	PSCommand() {}
@@ -183,9 +194,11 @@ public:
 	OpenCommand(char* s) : Command(s) {}
 	void run(vector<char*>* args) {
 		if (args->length() != 2) {
-			logfk(ERROR, "ropen [path] [bytes_to_read]\n");
+			logfk(ERROR, "Not enough args (got: %d): ropen [path] [bytes_to_read]\n", args->length());
+			for(auto i : *args) printfk("Arg: %s\n", i);
 			return;
 		}
+
 		char* path = args->pop_head();
 		char* byte_str = args->pop_head();
 		uint64_t bytes = atoi(byte_str);
@@ -458,6 +471,7 @@ namespace Monitor {
 				size++;
 				cur++;
 			}
+
 			if (size > 0) {
 				char* cur_tok = new char[size+1];
 				for(int i = 0; i < size; i++) cur_tok[i] = path[idx+i];
@@ -465,7 +479,7 @@ namespace Monitor {
 				tokens->push_back(cur_tok);
 				idx += size;
 			}
-			cur++;
+			if (*cur != '\0') cur++;
 			idx++;
 		}
 
@@ -476,7 +490,6 @@ namespace Monitor {
 		char c = getch();
 		while(c != '\n') {
 			printfk("%c", c);
-			//TODO: push_back causing a memory leak/overwriting bounds?
 			vec->push_back(c);
 			c = getch();
 		}
@@ -520,6 +533,7 @@ namespace Monitor {
 		cmd_list().push_back(new SectionsCommand("sections"));
 		cmd_list().push_back(new ProgramTableCommand("programtable"));
 		cmd_list().push_back(new PSCommand("ps"));
+		cmd_list().push_back(new AlignCommand("align"));
 		cmd_list().push_back(new HelpCommand("help"));
 
 		while(true) {

@@ -6,6 +6,7 @@
 #include<kernel/memory.h>
 #include<kernel/ptr.hpp>
 #include<unwind.h>
+#include<kernel/memory.h>
 
 namespace Memory {
 	void log_memory_region(uint64_t idx, uint64_t base, uint64_t length) {
@@ -42,13 +43,15 @@ namespace Memory {
 			slab_t* cur = get_slab_head();
 			int idx = 0;
 			while (cur != get_slab_head() || idx == 0) {
-				printfk("Slab #%d address: %x { %x, %x, %u, %d }\n", 
+				printfk("Slab #%d address: %x { %x, %x, %u, %d, %d, %d }\n", 
 						idx, 
 						cur, 
 						cur->next, 
 						cur->previous, 
 						cur->size, 
-						cur->is_free);
+						cur->is_free,
+						cur->is_readonly,
+						cur->is_executable);
 				cur = cur->next;
 				idx++;
 			}

@@ -4,25 +4,33 @@
 #include<kernel/ptr.hpp>
 
 void* operator new(size_t size) {
-	return Memory::Paging::kalloc(size, 1);
+	return Memory::Paging::kallocate(size, 1);
+}
+
+void* operator new(unsigned long size, std::align_val_t a) {
+	return Memory::Paging::kallocate(size, 1, true);
 }
 
 void* operator new[](size_t size) {
-	return Memory::Paging::kalloc(size, 1);
+	return Memory::Paging::kallocate(size, 1);
 }
 
 void operator delete(void* ptr) {
-	kfree(ptr);
+	Memory::Paging::kfree(ptr);
 }
 
 void operator delete[](void* ptr) {
-	kfree(ptr);
+	Memory::Paging::kfree(ptr);
 }
 
 void operator delete(void* ptr, size_t s) {
-	kfree(ptr);
+	Memory::Paging::kfree(ptr);
 }
 
 void operator delete[](void* ptr, size_t s) {
-	kfree(ptr);
+	Memory::Paging::kfree(ptr);
+}
+
+void operator delete(void* ptr, unsigned long s, std::align_val_t a) {
+	Memory::Paging::kfree(ptr);
 }

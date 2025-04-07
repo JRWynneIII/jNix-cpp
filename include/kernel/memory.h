@@ -98,12 +98,12 @@ typedef struct pt_dir {
 	pt_entry_t pages[512];
 } __attribute__((aligned(PAGE_SIZE_BYTES))) pt_dir_t;
 	
-typedef union page_map {
-	pml4_dir* pml4;
-	pdp_dir* pdp;
-	pd_dir* pd;
-	pt_dir* pt;
-} page_map_u;
+typedef struct page_map {
+	pml4_dir* pml4 = nullptr;
+	pdp_dir* pdp = nullptr;
+	pd_dir* pd = nullptr;
+	pt_dir* pt = nullptr;
+} page_map_t;
 
 struct frame_t {
 	// Phys and virt addresses cached for convenience sake
@@ -111,6 +111,7 @@ struct frame_t {
 	uintptr_t virt_addr;
 	bool is_readonly;
 	bool is_user;
+	bool is_executable;
 };
 
 typedef struct slab_t;
@@ -123,6 +124,7 @@ struct slab_t {
 	uint64_t size; //bytes
 	bool is_free;
 	bool is_readonly;
+	bool is_executable;
 };
 
 typedef struct mem_region;
@@ -153,19 +155,23 @@ namespace Memory {
 		void dump_slab_list();
 		slab_t* get_slab_head();
 		void kfree(void* vaddr);
-		void* kalloc(uint64_t objsize, uint64_t num);
+		void ufree(void* vaddr);
+		void* kallocate(uint64_t objsize, uint64_t num, bool align=false);
+		void* uallocate(uint64_t objsize, uint64_t num, bool readonly, bool executable, bool align=false);
+		void map_address(uintptr_t virt_addr, uintptr_t phys_addr, page_map_t map, bool readonly, bool executable, bool isuser);
 		void init();
 		void test();
 		void test_operators();
 		void ptr_t_test();
+		void* kalloc(uint64_t objsize, uint64_t num);
 	}
 }
+
 
 //God i hate defining functions inside headers
 template<typename T>
 ptr_t<T> kmalloc(uint64_t sizebytes) {
-	void* ptr = Memory::Paging::kalloc(sizebytes, 1);
+	void* ptr = Memory::Paging::kallocate(sizebytes, 1);
 	return ptr_t<T>((T)ptr, sizebytes);
 
 }
-void kfree(void* ptr);

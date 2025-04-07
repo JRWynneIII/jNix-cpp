@@ -125,6 +125,9 @@ public:
 	void setContext(context_t* c);
 	void setPriority(proc_priority_t p);
 
+	//allocates 0'd slab in kernel space, and modifies the process's page map to map it to a virtual addr
+	uintptr_t calloc(uint64_t bytes, bool readonly, bool executable);
+
 	void allocate_stack();
 	void load();
 	void setup_proc_page_table();
