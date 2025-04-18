@@ -10,3 +10,4 @@ struct registers {
 };
 
 void kpanic(struct registers* r);
+void kpanic(char* msg);

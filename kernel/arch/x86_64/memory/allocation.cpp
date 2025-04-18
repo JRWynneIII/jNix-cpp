@@ -59,7 +59,7 @@ namespace Memory {
 					lhs->is_executable = slab_to_free->is_executable;
 				}
 			}
-			// TODO: invalidate page?
+			// TODO: invalidate page? and do we want to remove the frame from the PMM bitmap?
 		}
 
 		void kfree(void* vaddr) {
@@ -100,6 +100,7 @@ namespace Memory {
 			// TODO: invalidate page?
 			// 	Yes, because when we have processes, we want to be able to reuse unused kernel 
 			// 	pages in user space
+			// TODO: and do we want to remove the frame from the PMM bitmap?
 		}
 
 
@@ -117,58 +118,12 @@ namespace Memory {
 			// slab_t there
 			uint64_t slab_size = num_pages * PAGE_SIZE_BYTES;
 			
-			frame_t pages_to_allocate[num_pages];
-			for (auto region : Memory::usable_memory_regions) {
-				// Skip first memory region since it has page directory stuff there
-				if (iter == 0) {
-					iter++;
-					continue;
-				}
-
-				uintptr_t cur = region.base;
-				// Flag for finding the correct number of contiguous pages
-				bool found_contiguous_pages = true;
-				//while(cur < (region.base + region.length)) {
-				while(cur < ((region.base + region.length) - slab_size)) {
-					found_contiguous_pages = true;
-					// Look for num_pages of contiguous pages
-					for (int i = 0; i < num_pages; i++) {
-						uintptr_t page_start = cur + (PAGE_SIZE_BYTES * i);
-						//Get the virtual address for the physical address of the beginning of this slab
-						uintptr_t virt_addr = TO_VIRT_ADDR(page_start);
-						pt_entry_t* page = Memory::VMM::lookup_address(virt_addr);
-						if (page == nullptr || (!page->present && page->phys_addr == 0x0)) {
-							pages_to_allocate[i] = {
-								.phys_addr = page_start, 
-								.virt_addr = virt_addr, 
-								.is_readonly = readonly, 
-								.is_user = isuser, 
-								.is_executable = executable 
-							};
-						} else {
-							found_contiguous_pages = false;
-							break;
-						}
-					}
-
-					if (found_contiguous_pages) break;
-					cur += slab_size;
-				}
-
-				for (auto frame : pages_to_allocate) {
-					Memory::VMM::create_page_table_entry(&frame, Memory::VMM::pml4_dir);
-					pt_entry_t* page = Memory::VMM::lookup_address(frame.virt_addr);
-					page->present = true;
-				}
-
-				// Escape the for loop if we've found our pages/slab
-				if (found_contiguous_pages) break;
-
-				iter++;
-			}
+			//frame_t pages_to_allocate[num_pages];
+			uintptr_t first_frame = Memory::PMM::alloc_contiguous_frames(num_pages);
+			Memory::VMM::create_page_table_entry(first_frame, TO_VIRT_ADDR(first_frame), !readonly, false, !executable, &Memory::VMM::kernel_address_space());
 
 			// Write a new free slab entry at the beginning of new page range
-			slab_t* slab_addr = (slab_t*)((uint8_t*)(pages_to_allocate[0].virt_addr));
+			slab_t* slab_addr = (slab_t*)((uint8_t*)TO_VIRT_ADDR(first_frame));
 			slab_t s = { 
 				.next = slab_addr, 
 				.previous = slab_addr, 
@@ -603,7 +558,6 @@ namespace Memory {
 			//Allocate the first page and set the slab_head
 			slab_head = create_new_pages(1, false, false, false);
 			user_slab_head = nullptr;
-			dump_slab_list();
 		}
 		// Wrappers around the Memory::Paging functions to allow a more C-like calling method
 		void* kalloc(uint64_t objsize, uint64_t num) {

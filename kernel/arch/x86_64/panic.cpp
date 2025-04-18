@@ -6,6 +6,14 @@
 #include<string.h>
 #include<stdio.h>
 
+void kpanic(char* msg) {
+	printk("\n\n\n");
+	printk("============================================================================================================================\n");
+	logfk(PANIC, "%s\n", msg);
+	printk("============================================================================================================================\n");
+	halt();
+}
+
 void kpanic(struct registers* r) {
 	// Dump registers
 	// Write the exception message

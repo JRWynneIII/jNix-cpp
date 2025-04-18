@@ -40,12 +40,24 @@ namespace Memory {
 	// Should be a better way to do this
 	// Should be able to use some kind of linked list, but ~~nO hEaP YeT~~
 	mem_region usable_memory_regions[7];
+	mem_region unusable_memory_regions[7];
+	mem_region kernel_region;
+	mem_region bootloader_reclaimable_region;
+	mem_region framebuffer_region;
+
 	uint64_t region_idx = 0;
 
 	void set_usable_mem_region(uint64_t idx, uint64_t base, uint64_t length) {
 		mem_region region = {idx, base, length, nullptr};
 		usable_memory_regions[region_idx] = region;
 		region_idx++;
+	}
+
+	void set_unusable_mem_region(uint64_t idx, uint64_t base, uint64_t length) {
+		static size_t ridx = 0;
+		mem_region region = {idx, base, length, nullptr};
+		unusable_memory_regions[ridx] = region;
+		idx++;
 	}
 
 	void init_memmap() {
@@ -67,30 +79,35 @@ namespace Memory {
 						break;
 					case LIMINE_MEMMAP_ACPI_RECLAIMABLE: 
 						reclaimable_mem_bytes += entries[i]->length;
-						//set_usable_mem_region(i, entry->base, entry->length);
-						//log_memory_region(i, entry->base, entry->length);
+						set_unusable_mem_region(i, entry->base, entry->length);
 						logfk(KERNEL, "Region %d is reclaimable\n", i);
 						break;
 					case LIMINE_MEMMAP_BAD_MEMORY: 
-						//TODO: Remove bad memory regions from usable_regions
 						bad_mem_bytes += entries[i]->length;
-						//log_memory_region(i, entry->base, entry->length);
+						set_unusable_mem_region(i, entry->base, entry->length);
 						logfk(KERNEL, "Region %d is unusable; Bad memory!\n", i);
 						break;
 					case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE:
 						reclaimable_mem_bytes += entries[i]->length;
-						//set_usable_mem_region(i, entry->base, entry->length);
+						set_unusable_mem_region(i, entry->base, entry->length);
+						bootloader_reclaimable_region = {i, entry->base, entry->length};
 						logfk(KERNEL, "Region %d is reclaimable\n", i);
 						break;
 					case LIMINE_MEMMAP_RESERVED:
 						reserved_mem_bytes += entries[i]->length;
+						set_unusable_mem_region(i, entry->base, entry->length);
 						break;
 					case LIMINE_MEMMAP_ACPI_NVS:
 						acpi_nvs_mem_bytes += entries[i]->length;
+						set_unusable_mem_region(i, entry->base, entry->length);
 						break;
 					case LIMINE_MEMMAP_FRAMEBUFFER:
+						set_unusable_mem_region(i, entry->base, entry->length);
+						framebuffer_region = {i, entry->base, entry->length};
 						break;
 					case LIMINE_MEMMAP_KERNEL_AND_MODULES:
+						set_unusable_mem_region(i, entry->base, entry->length);
+						kernel_region = {i, entry->base, entry->length};
 						break;
 					default:
 						unknown_mem_bytes += entries[i]->length;

@@ -540,12 +540,14 @@ namespace Monitor {
 			printfk("(monitor) ");
 			//char* cmd = get_command();
 			char* cmd = get_command();
-			//Split cmd by ' ' and pass rest of string as arguments to run()
-			vector<char*>* split_cmd = strsplit(cmd, ' ');
-			char* command = split_cmd->pop_head();
-			for (auto c : cmd_list() ) {
-				if (strcmp(c->get_name(), command)) {
-					c->run(split_cmd);
+			if (strlen(cmd) > 0) {
+				//Split cmd by ' ' and pass rest of string as arguments to run()
+				vector<char*>* split_cmd = strsplit(cmd, ' ');
+				char* command = split_cmd->pop_head();
+				for (auto c : cmd_list() ) {
+					if (strcmp(c->get_name(), command)) {
+						c->run(split_cmd);
+					}
 				}
 			}
 			delete cmd;

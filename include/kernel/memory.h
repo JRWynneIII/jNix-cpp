@@ -10,76 +10,88 @@
 #define SLAB_START_ADDRESS(s) &s + SLAB_PTR_SIZE
 #define SLAB_END_ADDRESS(s) SLAB_START_ADDRESS(s) + s->size
 
-extern uint64_t kernelend;
+//extern uint64_t kernelend;
 
 #define IS_ALIGNED(a) (a & 0xFFF) == 0
 
 typedef struct frame_t;
 
-typedef struct pt_entry {
-	uintptr_t present : 1;
-	uintptr_t rw : 1;
-	uintptr_t user : 1;
-	uintptr_t write_through : 1;
-	uintptr_t cache_disabled : 1;
-	uintptr_t accessed : 1;
-	uintptr_t dirty : 1;
-	uintptr_t pat : 1;
-	uintptr_t global : 1;
-	uintptr_t reserved : 2;
-	uintptr_t phys_addr : 40;
-	uintptr_t reserved2 : 1;
-	uintptr_t ignored : 7;
-	uintptr_t memory_protection_key : 4;
-	uintptr_t no_exec : 1;
+typedef union pte {
+	struct {
+		uintptr_t present : 1;
+		uintptr_t rw : 1;
+		uintptr_t user : 1;
+		uintptr_t write_through : 1;
+		uintptr_t cache_disabled : 1;
+		uintptr_t accessed : 1;
+		uintptr_t dirty : 1;
+		uintptr_t pat : 1;
+		uintptr_t global : 1;
+		uintptr_t reserved : 2;
+		uintptr_t phys_addr : 40;
+		uintptr_t reserved2 : 1;
+		uintptr_t ignored : 7;
+		uintptr_t memory_protection_key : 4;
+		uintptr_t no_exec : 1;
+	};
+	uint64_t as_uint64_t;
 }__attribute__((packed)) pt_entry_t;
 
-typedef struct pd_entry {
-	uintptr_t present : 1;
-	uintptr_t rw : 1;
-	uintptr_t user : 1;
-	uintptr_t write_through : 1;
-	uintptr_t cache_disabled : 1;
-	uintptr_t accessed : 1;
-	uintptr_t ignored1 : 1;
-	uintptr_t page_size : 1;
-	uintptr_t ignored2 : 4;
-	uintptr_t pt_address: 39;
-	uintptr_t reserved : 1;
-	uintptr_t ignored3 : 11;
-	uintptr_t no_exec : 1;
+typedef union pde {
+	struct {
+		uintptr_t present : 1;
+		uintptr_t rw : 1;
+		uintptr_t user : 1;
+		uintptr_t write_through : 1;
+		uintptr_t cache_disabled : 1;
+		uintptr_t accessed : 1;
+		uintptr_t ignored1 : 1;
+		uintptr_t reserved0 : 1;
+		uintptr_t ignored2 : 4;
+		uintptr_t pt_address: 40;
+		uintptr_t reserved : 1;
+		uintptr_t ignored3 : 10;
+		uintptr_t no_exec : 1;
+	};
+	uint64_t as_uint64_t;
 }__attribute__((packed))  pd_entry_t;
 
-typedef struct pdp_entry {
-	uintptr_t present : 1;
-	uintptr_t rw : 1;
-	uintptr_t user : 1;
-	uintptr_t write_through : 1;
-	uintptr_t cache_disabled : 1;
-	uintptr_t accessed : 1;
-	uintptr_t ignored1 : 1;
-	uintptr_t reserved1 : 1;
-	uintptr_t ignored2 : 4;
-	uintptr_t pd_address: 39;
-	uintptr_t reserved2 : 1;
-	uintptr_t ignored3 : 11;
-	uintptr_t no_exec : 1;
+typedef union pdpe {
+	struct {
+		uintptr_t present : 1;
+		uintptr_t rw : 1;
+		uintptr_t user : 1;
+		uintptr_t write_through : 1;
+		uintptr_t cache_disabled : 1;
+		uintptr_t accessed : 1;
+		uintptr_t ignored1 : 1;
+		uintptr_t reserved1 : 1;
+		uintptr_t ignored2 : 4;
+		uintptr_t pd_address: 40;
+		uintptr_t reserved2 : 1;
+		uintptr_t ignored3 : 10;
+		uintptr_t no_exec : 1;
+	};
+	uint64_t as_uint64_t;
 } __attribute__((packed)) pdp_entry_t;
 
-typedef struct pml4_entry {
-	uintptr_t present : 1;
-	uintptr_t rw : 1;
-	uintptr_t user : 1;
-	uintptr_t write_through : 1;
-	uintptr_t cache_disabled : 1;
-	uintptr_t accessed : 1;
-	uintptr_t ignored1 : 1;
-	uintptr_t page_size : 1;
-	uintptr_t ignored2 : 4;
-	uintptr_t pdp_address: 39;
-	uintptr_t reserved : 1;
-	uintptr_t ignored3 : 11;
-	uintptr_t no_exec : 1;
+typedef union pml4e {
+	struct {
+		uintptr_t present : 1;
+		uintptr_t rw : 1;
+		uintptr_t user : 1;
+		uintptr_t write_through : 1;
+		uintptr_t cache_disabled : 1;
+		uintptr_t accessed : 1;
+		uintptr_t ignored1 : 1;
+		uintptr_t reserved0 : 1;
+		uintptr_t ignored2 : 4;
+		uintptr_t pdp_address: 40;
+		uintptr_t reserved : 1;
+		uintptr_t ignored3 : 10;
+		uintptr_t no_exec : 1;
+	};
+	uint64_t as_uint64_t;
 } __attribute__((packed)) pml4_entry_t;
 
 typedef struct pml4_dir {
@@ -98,11 +110,19 @@ typedef struct pt_dir {
 	pt_entry_t pages[512];
 } __attribute__((aligned(PAGE_SIZE_BYTES))) pt_dir_t;
 	
+//TODO: We probably should make this a list of each dir/table type
+//	so that we can append the pointers for each new one we create
+//	and so that we can free them up. 
 typedef struct page_map {
 	pml4_dir* pml4 = nullptr;
 	pdp_dir* pdp = nullptr;
 	pd_dir* pd = nullptr;
 	pt_dir* pt = nullptr;
+	uint64_t pml4_idx = 0;
+	uint64_t pdp_idx = 0;
+	uint64_t pd_idx = 0;
+	uint64_t pt_idx = 0;
+
 } page_map_t;
 
 struct frame_t {
@@ -116,9 +136,6 @@ struct frame_t {
 
 typedef struct slab_t;
 struct slab_t {
-//	uint64_t buffer = 0;
-//	uint64_t buffer2 = 0;
-//	uint64_t buffer3 = 0;
 	slab_t* next;
 	slab_t* previous;
 	uint64_t size; //bytes
@@ -136,6 +153,10 @@ struct mem_region {
 	mem_region* next;
 }; 
 
+extern "C" uint8_t endkernel[];
+
+#include<kernel/memory/addrspace.hpp>
+
 namespace Memory {
 	void log_memory_info();
 	void init_memmap();
@@ -150,18 +171,27 @@ namespace Memory {
 	extern uint64_t hhdm_offset;
 	extern uint64_t kernel_physical_addr_base;
 	extern uint64_t kernel_virtual_addr_base;
+	extern mem_region kernel_region;
+	extern mem_region bootloader_reclaimable_region;
+	extern mem_region framebuffer_region;
 	extern mem_region usable_memory_regions[7];
+	extern mem_region unusable_memory_regions[7];
+	namespace PMM {
+		uint64_t num_frames_used();
+		uintptr_t bitmap_location();
+		uintptr_t alloc_frame();
+		uintptr_t alloc_contiguous_frames(uint64_t num);
+		void free_frame(uintptr_t frame);
+		void free_contiguous_frames(uintptr_t frames, uint64_t num);
+		void dump_pmm_info();
+	}
 	namespace VMM {
-		extern pml4_dir_t* pml4_dir;
-		extern pdp_dir_t* cur_pdp_dir;
-		extern pd_dir_t* cur_pd_dir;
-		extern pt_dir_t* cur_pt_dir;
+		extern page_map_t page_map_table;
+		void create_page_table_entry(uintptr_t phys, uintptr_t virt, bool rw, bool noexec, bool isuser, addrspace_t* as);
+		addrspace_t& kernel_address_space();
 		void init();
-		uintptr_t alloc_new_frame();
-		uintptr_t alloc_new_table_or_next_entry(page_map_t table);
-		void create_page_table_entry(frame_t* f, pml4_dir_t* pml4);
-		void create_page_table_entry(frame_t* f, page_map_t map);
-		void map_address(uintptr_t virt_addr, uintptr_t phys_addr, page_map_t map, bool readonly, bool executable, bool isuser);
+		void create_page_table_entry(frame_t* frame, addrspace_t* as);
+		void map_address(uintptr_t virt_addr, uintptr_t phys_addr, bool readonly, bool executable, bool isuser, addrspace_t* as);
 		pt_entry_t* lookup_address(uintptr_t virt_addr);
 	}
 	namespace Allocation {

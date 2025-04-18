@@ -77,7 +77,6 @@ extern "C" void kmain(void) {
 	Memory::init_memmap();
 	Memory::log_memory_info();
 	logfk(KERNEL, "Initializing paging and memory management\n");
-//	Interrupts::test();
 	Memory::Allocation::init();
 	logfk(KERNEL, "Paging and memory management intialization complete\n");
 	

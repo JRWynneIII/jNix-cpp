@@ -66,7 +66,7 @@ uintptr_t process_t::calloc(uint64_t bytes, bool readonly, bool executable) {
 	};
 	
 	//This will map the same virtual address in kernel space to user space....
-	Memory::VMM::map_address(ptr, TO_PHYS_ADDR(ptr), map, readonly, executable, true);
+	Memory::VMM::map_address(ptr, TO_PHYS_ADDR(ptr), readonly, executable, true, &Memory::VMM::kernel_address_space());
 }
 
 //Process preparation

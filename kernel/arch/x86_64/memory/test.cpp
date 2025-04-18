@@ -77,10 +77,10 @@ namespace Memory {
 				printk(" FAILED\n");
 			}
 
-			dump_slab_list();
+			//dump_slab_list();
 			delete t1;
 			logfk(KERNEL, "Free'd %x\n", t1);
-			dump_slab_list();
+			//dump_slab_list();
 			logfk(KERNEL, "Memory management testing complete\n");
 		}
 

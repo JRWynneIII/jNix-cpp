@@ -99,7 +99,8 @@ namespace Kernel {
 
 		void init() {
 			//Preallocate all our pids
-			for (uint64_t i = 0; i < Kernel::pid_max; i++) pids().push_back(0);
+			for (uint64_t i = 0; i < Kernel::pid_max; i++) 
+				pids().push_back(0);
 			//set the function that gets called when a timer interrupt happens
 			Device* pit = Devices::get_device_by_path("pit.programmable_interrupt_timer.1");
 			if (pit != nullptr) {

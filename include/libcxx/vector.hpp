@@ -62,6 +62,21 @@ public:
 		}
 		this->size++;
 	}
+
+	void push_back_no_heap(T val) {
+		if (tail != nullptr) {
+			node<T>* old_tail = this->tail;
+			node<T> new_node = node<T>(val);
+			new_node.set_prev(this->tail);
+			this->tail->set_next(&new_node);
+			this->tail = &new_node;
+		} else {
+			node<T> no = node<T>(val);
+			this->head = &no;
+			this->tail = this->head;
+		}
+		this->size++;
+	}
 	
 	T pop_head() {
 		T ret = this->head->get_value();
