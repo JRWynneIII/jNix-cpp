@@ -2,4 +2,5 @@
 
 namespace GDT {
 	void init();
+	void dump();
 }

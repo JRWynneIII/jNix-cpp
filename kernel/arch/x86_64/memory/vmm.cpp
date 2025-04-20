@@ -11,7 +11,7 @@
 namespace Memory {
 	namespace VMM {
 		addrspace_t& kernel_address_space() {
-			static addrspace_t as = addrspace_t(Memory::hhdm_offset);
+			static addrspace_t as = addrspace_t(Memory::hhdm_offset, false);
 			return as;
 		}
 
@@ -36,14 +36,9 @@ namespace Memory {
 			logfk(KERNEL, "Initing new addr space\n");
 			// The page directory address is stored in CR3; This is a unique register per *thread*
 			// NOTE: the above when implementing SMT
-			uintptr_t pml4_ptr;
-			asm volatile("mov %%cr3, %0" : "=r"(pml4_ptr));
-			// CR3 holds more than just the pgd address, so we mask off what we don't want
-			pml4_ptr &= ~0xFFF; 
-			//pml4_ptr = TO_VIRT_ADDR(pml4_ptr);
-			pml4_dir_t* pml4 = (pml4_dir_t*) TO_VIRT_ADDR(pml4_ptr);
 
-			kernel_address_space().bootstrap(pml4);
+			kernel_address_space().bootstrap();
+			kernel_address_space().activate();
 		}
 	}
 }

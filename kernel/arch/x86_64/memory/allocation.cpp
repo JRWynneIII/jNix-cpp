@@ -101,6 +101,9 @@ namespace Memory {
 			// 	Yes, because when we have processes, we want to be able to reuse unused kernel 
 			// 	pages in user space
 			// TODO: and do we want to remove the frame from the PMM bitmap?
+			// 	This brings into question whether we want to even coallesce and track unused slabs of size > 1 frame
+			// 		I think we should continue to coallesce slabs that are small but completely remove slabs
+			// 		that are large and free
 		}
 
 
@@ -118,7 +121,6 @@ namespace Memory {
 			// slab_t there
 			uint64_t slab_size = num_pages * PAGE_SIZE_BYTES;
 			
-			//frame_t pages_to_allocate[num_pages];
 			uintptr_t first_frame = Memory::PMM::alloc_contiguous_frames(num_pages);
 			Memory::VMM::create_page_table_entry(first_frame, TO_VIRT_ADDR(first_frame), !readonly, false, !executable, &Memory::VMM::kernel_address_space());
 

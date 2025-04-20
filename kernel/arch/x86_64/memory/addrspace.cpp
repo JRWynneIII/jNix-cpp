@@ -9,9 +9,9 @@
 #include<kernel/ptr.hpp>
 #include<cstdint>
 
-addrspace_t::addrspace_t(uintptr_t offset) : pml4(nullptr),
-					is_userspace(false), 
-					is_kernel_addrspace(true),
+addrspace_t::addrspace_t(uintptr_t offset, bool is_user) : pml4(nullptr),
+					is_userspace(is_user), 
+					is_kernel_addrspace(!is_user),
 					virt_addr_offset(offset), 
 					page_size_bytes(4096) {}
 
@@ -67,6 +67,15 @@ void addrspace_t::write_cr3(uint64_t ptr) {
 			: "rax");
 }
 
+void addrspace_t::activate() {
+	this->last_cr3_value = this->read_cr3();
+	this->write_cr3(this->virt_to_phys(this->pml4->dir));
+}
+
+void addrspace_t::deactivate() {
+	this->write_cr3(this->last_cr3_value);
+}
+
 //	- Implement init(). this will:
 //		- Call `new` or `kallocate` to create new page map tables.
 //			- this will automatically add them to the kernel's addrspace_t
@@ -82,7 +91,7 @@ uintptr_t addrspace_t::alloc_zeroed_frame() {
 	return frame;
 }
 
-void addrspace_t::bootstrap(pml4_dir_t* old_pml4) {
+void addrspace_t::bootstrap() {
 	uintptr_t new_tablespace = this->alloc_zeroed_frame();
 	uintptr_t new_pml4_location = new_tablespace;
 
@@ -108,9 +117,6 @@ void addrspace_t::bootstrap(pml4_dir_t* old_pml4) {
 
 	logfk(KERNEL, "VMM: Mapping PMM bitmap location\n");
 	this->map_region(pmm_region, true, false, false);
-	
-	// - Finally, set CR3 to the physical address of this object's pml4
-	this->write_cr3(this->virt_to_phys(this->pml4->dir));
 }
 
 void addrspace_t::map_accessible_space() {

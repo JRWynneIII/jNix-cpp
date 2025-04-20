@@ -21,6 +21,15 @@
 #include<kernel/process/process.hpp>
 #include<kernel/scheduler/scheduler.hpp>
 
+class DumpGDTCommand : public Command {
+public:
+	DumpGDTCommand() {}
+	DumpGDTCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		GDT::dump();
+	}
+};
+
 class AlignCommand : public Command {
 public:
 	AlignCommand() {}
@@ -534,6 +543,7 @@ namespace Monitor {
 		cmd_list().push_back(new ProgramTableCommand("programtable"));
 		cmd_list().push_back(new PSCommand("ps"));
 		cmd_list().push_back(new AlignCommand("align"));
+		cmd_list().push_back(new DumpGDTCommand("gdt"));
 		cmd_list().push_back(new HelpCommand("help"));
 
 		while(true) {
