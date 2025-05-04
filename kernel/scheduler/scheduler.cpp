@@ -167,9 +167,9 @@ namespace Kernel {
 			pids().set(pid, 0);
 		}
 
-		void add_proccess(char* cli, char* exec_path, proc_priority_t priority, bool is_kernel_proc) {
+		void add_process(char* cli, char* exec_path, proc_priority_t priority, bool is_kernel_proc) {
 			uint64_t pid = get_available_pid();
-			Executable* e = new Executable(exec_path);
+			executable_t* e = new executable_t(exec_path, !is_kernel_proc);
 			process_t* proc = new process_t(pid, cli, e, Kernel::pid_max, priority, is_kernel_proc);
 			process_queue().push_back(proc);
 			proc->allocate_stack();

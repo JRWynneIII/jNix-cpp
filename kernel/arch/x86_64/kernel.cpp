@@ -61,29 +61,28 @@ extern "C" void kmain(void) {
 		halt();
 	}
 
+	// Run our global constructors
+	for (std::size_t i = 0; &__init_array[i] != __init_array_end; i++) {
+	    __init_array[i]();
+	}
+
 	FrameBuffer::init();
 	printk("Booting jnix....\n\n");
 	logfk(KERNEL, "Initialized framebuffer\n");
 	if (boot_time_req.response == nullptr) {
 		logfk(ERROR, "Could not get boot time from Limine/RTC");
 	}
-
-	logfk(KERNEL, "Loading new GDT\n");
-	GDT::init();
-	logfk(KERNEL, "GDT initialization complete\n");
-
-
 	logfk(KERNEL, "Gathering memory map\n");
 	Memory::init_memmap();
 	Memory::log_memory_info();
 	logfk(KERNEL, "Initializing paging and memory management\n");
 	Memory::Allocation::init();
 	logfk(KERNEL, "Paging and memory management intialization complete\n");
-	
-	// Run our global constructors
-	for (std::size_t i = 0; &__init_array[i] != __init_array_end; i++) {
-	    __init_array[i]();
-	}
+
+	logfk(KERNEL, "Loading new GDT\n");
+	GDT::init();
+	logfk(KERNEL, "GDT initialization complete\n");
+
 
 	logfk(KERNEL, "Loading drivers...\n");
 	Drivers::load_drivers();
@@ -101,6 +100,7 @@ extern "C" void kmain(void) {
 	Initrd::mount();
 	logfk(KERNEL, "Initrd initialization is complete\n");
 	logfk(KERNEL, "Initializing Scheduler\n");
+	GDT::gdt().load_tss();
 	Kernel::Scheduler::init();
 	logfk(KERNEL, "Scheduler initialization is complete\n");
 
@@ -112,7 +112,9 @@ extern "C" void kmain(void) {
 	logfk(KERNEL, "Starting kernel-space monitor\n");
 	printfk("Welcome to jnix!\n");
 	//Memory::Paging::dump_slab_list();
-	Monitor::start();
+	//Monitor::start();
+	logfk(KERNEL, "Starting proc 1\n");
+	Kernel::Scheduler::add_process("loop.elf", "/sysroot/bin/loop.elf", proc_priority_t::HIGH, true);
 
 
     	halt();

@@ -21,6 +21,26 @@
 #include<kernel/process/process.hpp>
 #include<kernel/scheduler/scheduler.hpp>
 
+class RunExecutableCommand : public Command {
+public:
+	RunExecutableCommand() {}
+	RunExecutableCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		if (args->length() > 0) {
+			char* path = args->pop_head();
+			if (VFS::stat(path) != nullptr) {
+				executable_t e = executable_t(path, true);
+				e.load();
+				e.execute();
+			} else {
+				logfk(ERROR, "Invalid path %s\n", path);
+			}
+		} else {
+			printfk("run [path]");
+		}
+	}
+};
+
 class DumpGDTCommand : public Command {
 public:
 	DumpGDTCommand() {}
@@ -57,6 +77,25 @@ public:
 	}
 };
 
+class LoadELFCommand : public Command {
+public:
+	LoadELFCommand() {}
+	LoadELFCommand(char* s) : Command(s) {}
+	void run(vector<char*>* args) {
+		if (args->length() >= 1) {
+			char* path = args->pop_head();
+			if (VFS::stat(path) != nullptr) {
+				executable_t e = executable_t(path);
+				e.load();
+			} else {
+				logfk(ERROR, "Invalid path %s\n", path);
+			}
+		} else {
+			logfk(ERROR, "loadelf [path]\n");
+		}
+	}
+};
+
 class SymbolsCommand : public Command {
 public:
 	SymbolsCommand() {}
@@ -65,7 +104,7 @@ public:
 		if (args->length() >= 1) {
 			char* path = args->pop_head();
 			if (VFS::stat(path) != nullptr) {
-				Executable e = Executable(path);
+				executable_t e = executable_t(path);
 				e.dump_symbol_table();
 			} else {
 				logfk(ERROR, "Invalid path %s\n", path);
@@ -84,7 +123,7 @@ public:
 		if (args->length() >= 1) {
 			char* path = args->pop_head();
 			if (VFS::stat(path) != nullptr) {
-				Executable e = Executable(path);
+				executable_t e = executable_t(path);
 				e.dump_section_table();
 			} else {
 				logfk(ERROR, "Invalid path %s\n", path);
@@ -103,7 +142,7 @@ public:
 		if (args->length() >= 1) {
 			char* path = args->pop_head();
 			if (VFS::stat(path) != nullptr) {
-				Executable e = Executable(path);
+				executable_t e = executable_t(path);
 				e.dump_program_table();
 			} else {
 				logfk(ERROR, "Invalid path %s\n", path);
@@ -122,7 +161,7 @@ public:
 		if (args->length() >= 1) {
 			char* path = args->pop_head();
 			if (VFS::stat(path) != nullptr) {
-				Executable e = Executable(path);
+				executable_t e = executable_t(path);
 				e.dump_header();
 				printfk("Press any key to continue\n");
 				getch();
@@ -544,6 +583,8 @@ namespace Monitor {
 		cmd_list().push_back(new PSCommand("ps"));
 		cmd_list().push_back(new AlignCommand("align"));
 		cmd_list().push_back(new DumpGDTCommand("gdt"));
+		cmd_list().push_back(new LoadELFCommand("load"));
+		cmd_list().push_back(new RunExecutableCommand("run"));
 		cmd_list().push_back(new HelpCommand("help"));
 
 		while(true) {

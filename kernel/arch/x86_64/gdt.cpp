@@ -52,28 +52,55 @@ void gdt_t::set_segment(int idx,
 extern "C" uint64_t stack_top;
 
 void gdt_t::set_tss(int idx1, int idx2) {
+//	this->tss = new tss_t;
 	uintptr_t base = (uintptr_t)&(this->tss);
 	uintptr_t limit = sizeof(tss_t) - 1;
 
-	// In long mode, we actually need 2 TSS entries, one for ring 3, and one for ring 0, respectively
-	this->gdt[idx1].as_tss_gdt_entry_t = {
-		.limit = (uint16_t)limit,
-		.base = (uint16_t)base,
-		.access = (uint16_t)(0xE900 + ((base >> 16) & 0xFF)),
-		.flags = (uint16_t)((base >> 16) & 0xFF00)
+	// In long mode, we actually need 2 TSS entries
+	// TODO: TSS is not swapping stack pointer to rsp0 on interrupt
+	tss_gdt_entry_lo_t tss_descriptor_lo = {
+		.limit_lo = (uint64_t)limit,
+		.base_lo = (uint64_t)base,
+
+		.type = 0x9, //0x2 = LDT, 0x9 = TSS available, 0xB = TSS busy
+		.dpl = 3,
+		.present = 1,
+		.limit_hi = ((uint64_t)limit >> 16) & 0xFFFF,
+		.available = 0,
+		.reserved1 = 0,
+		.granularity = 0, // If G==0, then limit is in 'bytes', if 1, then its in 4k pages
+		.base_mid = ((uint64_t)base >> 24) & 0xFFFFFF,
 	};
 
-	this->gdt[idx2].as_tss_gdt_entry_t = {
-		.limit = (uint16_t) (limit >> 32),
-		.base = (uint16_t) (base >> 48),
-		.access = 0x0,
-		.flags = 0x0
+	tss_gdt_entry_hi_t tss_descriptor_hi = {
+		.base_hi = ((uint64_t)base >> 32) & 0xFFFFFFFF,
+		.reserved2 = 0
 	};
+
+	this->gdt[idx1].as_tss_gdt_entry_lo_t = tss_descriptor_lo;
+	this->gdt[idx2].as_tss_gdt_entry_hi_t = tss_descriptor_hi;
+
+//	this->gdt[idx1].as_tss_gdt_entry_t = {
+//		.limit = (uint16_t)limit,
+//		.base = (uint16_t)base,
+//		//This is DPL=3
+//		//.access = (uint16_t)(0xE900 + ((base >> 16) & 0xFF)),
+//		//This is DPL=0
+//		.access = (uint16_t)(0x8900 + ((base >> 16) & 0xFF)),
+//		.flags = (uint16_t)((base >> 16) & 0xFF00)
+//	};
+//
+//	this->gdt[idx2].as_tss_gdt_entry_t = {
+//		.limit = (uint16_t) (base >> 32),
+//		.base = (uint16_t) (base >> 48),
+//		.access = 0x0,
+//		.flags = 0x0
+//	};
 
 	memset(&(this->tss), 0, sizeof(tss_t));
 	//TODO: UNSURE
-	this->tss.iopb = 0xdfff;
-//	this->tss.rsp0 = &stack_top;
+	this->tss.iopb = sizeof(tss_t);
+	this->tss.rsp0 = &stack_top;
 }
 
 void gdt_t::load_tss() {
@@ -83,7 +110,7 @@ void gdt_t::load_tss() {
 }
 
 void gdt_t::load_gdt() {
-	logfk(KERNEL, "Loading GDT\n");
+	logfk(KERNEL, "Loading GDTR\n");
 	Hardware::CPU().load_gdt(this->gdtr);
 }
 
@@ -92,23 +119,23 @@ void gdt_t::init() {
 	this->gdtr.limit = (sizeof(gdt_entry_t) * NUM_GDT_ENTRIES) - 1;
 	this->gdtr.base = (uint64_t)&(this->gdt);
 	// NULL
-	this->set_segment(0, 0);
+	this->set_segment(GDT_NULL_IDX, 0);
 	// Kernel Code 64
-	this->set_segment(1, 0, 0xFFFFFFFF, false, true, true, 0, true);
+	this->set_segment(GDT_KERNEL_CODE_IDX, 0, 0xFFFFFFFF, false, true, true, 0, true);
 	// Kernel Data 64
-	this->set_segment(2, 0, 0xFFFFFFFF, true, false, true, 0, true);
+	this->set_segment(GDT_KERNEL_DATA_IDX, 0, 0xFFFFFFFF, true, false, true, 0, true);
 	// User Code 64
-	this->set_segment(3, 0, 0xFFFFFFFF, false, true, true, 3, true);
+	this->set_segment(GDT_USER_CODE_IDX, 0, 0xFFFFFFFF, false, true, true, 3, true);
 	// User Data 64
-	this->set_segment(4, 0, 0xFFFFFFFF, true, false, true, 3, true);
+	this->set_segment(GDT_USER_DATA_IDX, 0, 0xFFFFFFFF, true, false, true, 3, true);
 	
 	//TSS
-	this->set_tss(5, 6);
+	this->set_tss(GDT_TSS_IDX, GDT_TSS_IDX2);
 	this->load_gdt();
 
 	reloadsegs();
 
-	this->load_tss();
+	//this->load_tss();
 
 	Hardware::CPU().enable_interrupts();
 }

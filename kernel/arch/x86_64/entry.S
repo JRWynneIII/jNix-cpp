@@ -1,6 +1,8 @@
 .section .bss
 .align 16
 .global stack_top
+.global stack_bottom
+
 stack_bottom:
 	.skip 0x100000
 stack_top:

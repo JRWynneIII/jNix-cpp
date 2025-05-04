@@ -3,15 +3,55 @@
 #include<kernel/tss.hpp>
 
 #define NUM_GDT_ENTRIES 7
+#define GDT_NULL_IDX 0
+#define GDT_KERNEL_CODE_IDX 1
+#define GDT_KERNEL_DATA_IDX 2
+#define GDT_USER_CODE_IDX 3
+#define GDT_USER_DATA_IDX 4
+#define GDT_TSS_IDX 5
+#define GDT_TSS_IDX2 6
 
-typedef struct tss_gdt_entry {
-	uint16_t limit;
-	uint16_t base;
-	uint16_t access;
-	uint16_t flags;
-} tss_gdt_entry_t;
+#define GDT_KERNEL_CODE_OFFSET GDT_KERNEL_CODE_IDX * 8
+#define GDT_KERNEL_DATA_OFFSET GDT_KERNEL_DATA_IDX * 8
+#define GDT_USER_CODE_OFFSET GDT_USER_CODE_IDX * 8
+#define GDT_USER_DATA_OFFSET GDT_USER_DATA_IDX * 8
 
-//TODO: Change these to bitfield structs
+typedef struct tss_gdt_desc_lo {
+	uint64_t limit_lo	:16;
+	uint64_t base_lo	:24;
+
+	//uint8_t base_mid_lo	:8;
+	//access
+	uint64_t type		:5;
+	//uint8_t reserved0	:1;
+	uint64_t dpl		:2;
+	uint64_t present	:1;
+
+	//limit
+	uint64_t limit_hi	:4;
+
+	//flags
+	uint64_t available	:1;
+	uint64_t reserved1	:2;
+	uint64_t granularity	:1;
+
+	//base
+	uint64_t base_mid	:8;
+}__attribute__((packed)) tss_gdt_entry_lo_t;
+
+typedef struct tss_gdt_desc_hi {
+	uint64_t base_hi	:32;
+
+	uint64_t reserved2	:32;
+}__attribute__((packed)) tss_gdt_entry_hi_t;
+
+//typedef struct tss_gdt_entry {
+//	uint16_t limit;
+//	uint16_t base;
+//	uint16_t access;
+//	uint16_t flags;
+//} tss_gdt_entry_t;
+
 typedef union gdt_entry_t {
 	struct {
 		uint16_t limit_lo 	: 16;
@@ -35,7 +75,9 @@ typedef union gdt_entry_t {
 		uint8_t base_hi		: 8;
 	}__attribute__((packed));
 	uint64_t as_uint64_t;
-	tss_gdt_entry_t as_tss_gdt_entry_t;
+	tss_gdt_entry_lo_t as_tss_gdt_entry_lo_t;
+	tss_gdt_entry_hi_t as_tss_gdt_entry_hi_t;
+
 }__attribute__((packed)) gdt_entry_t;
 
 typedef struct gdt_ptr {
@@ -49,8 +91,8 @@ class gdt_t {
 private:
 	gdt_entry_t gdt[NUM_GDT_ENTRIES];
 	gdt_ptr gdtr;
-	tss_t tss;
 public:
+	tss_t tss;
 	gdt_t();
 	~gdt_t();
 	void set_segment(int idx,

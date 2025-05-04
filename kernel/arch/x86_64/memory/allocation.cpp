@@ -139,7 +139,7 @@ namespace Memory {
 			*slab_addr = s;
 
 			//Insert into list
-			if (slab_head != nullptr) {
+			if (slab_head != nullptr && user_slab_head != nullptr) {
 				// Update last slab to point to new page's slab_t, only if this isn't the first slab
 				// on the first page
 				slab_t* last_slab = find_last_slab();
@@ -167,7 +167,7 @@ namespace Memory {
 				cur = user_slab_head;
 
 			if (cur->next != slab_head) {
-				while (cur->next != slab_head) {
+				while (cur->next != slab_head && cur->next != user_slab_head) {
 					if (cur->is_free && cur->size >= size
 						&& cur->is_readonly == readonly 
 						&& cur->is_executable == executable) break;
@@ -559,7 +559,7 @@ namespace Memory {
 			Memory::VMM::init();
 			//Allocate the first page and set the slab_head
 			slab_head = create_new_pages(1, false, false, false);
-			user_slab_head = nullptr;
+			user_slab_head = create_new_pages(1, false, false, true);
 		}
 		// Wrappers around the Memory::Paging functions to allow a more C-like calling method
 		void* kalloc(uint64_t objsize, uint64_t num) {

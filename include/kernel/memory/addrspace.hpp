@@ -17,7 +17,7 @@ private:
 	void map_region(mem_region region, bool rw, bool isuserspace, bool notexecutable, uintptr_t virt_offset=0);
 
 	void map_accessible_space();
-	void map_kernel_region(mem_region kernel);
+	void map_kernel_region(mem_region kernel, bool noexec=false);
 
 	uintptr_t alloc_zeroed_frame();
 	void delete_table(uintptr_t address);
@@ -28,6 +28,7 @@ public:
 	addrspace_t(uintptr_t offset, bool is_user);
 	//Copy constructor
 	addrspace_t(const addrspace_t& rhs);
+	addrspace_t() {}
 
 	~addrspace_t();
 

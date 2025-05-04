@@ -143,9 +143,9 @@ public:
 			cur = next;
 		}
 	
-		this->tail = rhs->get_tail();
-		this->head = rhs->get_head();
-		this->size = rhs->length();
+		this->tail = rhs.get_tail();
+		this->head = rhs.get_head();
+		this->size = rhs.length();
 	}
 	
 	bool operator!=(nullptr_t rhs) {

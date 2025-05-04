@@ -8,6 +8,45 @@
 1:
 .endm
 
+.macro pushall
+	cld
+	push %rax
+	push %rbx
+	push %rcx
+	push %rdx
+	push %rsi
+	push %rdi
+	push %rbp
+	push %r8
+	push %r9
+	push %r10
+	push %r11
+	push %r12
+	push %r13
+	push %r14
+	push %r15
+.endm
+
+.macro popall
+	pop %r15
+	pop %r14
+	pop %r13
+	pop %r12
+	pop %r11
+	pop %r10
+	pop %r9
+	pop %r8
+	pop %rbp
+	pop %rdi
+	pop %rsi
+	pop %rdx
+	pop %rcx
+	pop %rbx
+	pop %rax
+.endm
+
+//TODO: Stub out all the isrs and irqs to use a macro to clean this shit up
+
 
 .global isr0
 .global isr1
@@ -50,8 +89,7 @@
 #  0: Divide By Zero Exception
 isr0: 
 	cli
-	pushq $0	   # A normal ISR stub that pops a dummy error code to keep a
-				   # uniform stack frame
+	pushq $0
 	pushq $0
 	jmp isr_stub
 
@@ -107,9 +145,7 @@ isr7:
 #  8: Double Fault Exception (With Error Code!)
 isr8: 
 	cli
-	pushq $8		   # Note that we DON'T push a value on the stack in this one!
-					   # It pushes one already! Use this type of stub for exceptions
-					   # that pop error codes!
+	pushq $8		   # No error code is pushed because cpu does it for us
 	jmp isr_stub
 
 
@@ -264,47 +300,15 @@ isr31:
 .extern fault_handler
 .type fault_handler, @function
 
-# This is our common ISR stub. It saves the processor state, sets
-# up for kernel mode segments, calls the C-level fault handler,
-# and finally restores the stack frame.
+#ISR common stub
 isr_stub: 
 	swap_gs
-	push %rax
-	push %rbx
-	push %rcx
-	push %rdx
-	push %rsi
-	push %rdi
-	push %rbp
-	push %r8
-	push %r9
-	push %r10
-	push %r11
-	push %r12
-	push %r13
-	push %r14
-	push %r15
+	pushall
 	
-	cld
-
-	mov %rsp, %rdi // This moves a pointer to the stack to the 'first argument' of the function call
+	mov %rsp, %rdi 
 	call fault_handler
 
-	pop %r15
-	pop %r14
-	pop %r13
-	pop %r12
-	pop %r11
-	pop %r10
-	pop %r9
-	pop %r8
-	pop %rbp
-	pop %rdi
-	pop %rsi
-	pop %rdx
-	pop %rcx
-	pop %rbx
-	pop %rax
+	popall
 	swap_gs
 
 	add $16, %rsp
@@ -337,44 +341,15 @@ irq8:
 .extern irq_handler
 .type irq_handler, @function
 
+#IRQ common stub
 irq_stub:
 	swap_gs
-	push %rax
-	push %rbx
-	push %rcx
-	push %rdx
-	push %rsi
-	push %rdi
-	push %rbp
-	push %r8
-	push %r9
-	push %r10
-	push %r11
-	push %r12
-	push %r13
-	push %r14
-	push %r15
+	pushall
 	
-	cld
-
-	mov %rsp, %rdi // This moves a pointer to the stack to the 'first argument' of the function call
+	mov %rsp, %rdi 
 	call irq_handler
 
-	pop %r15
-	pop %r14
-	pop %r13
-	pop %r12
-	pop %r11
-	pop %r10
-	pop %r9
-	pop %r8
-	pop %rbp
-	pop %rdi
-	pop %rsi
-	pop %rdx
-	pop %rcx
-	pop %rbx
-	pop %rax
+	popall
 
 	swap_gs
 	add $16, %rsp

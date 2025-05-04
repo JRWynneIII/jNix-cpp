@@ -5,7 +5,7 @@
 #include<string.h>
 #include<vector.hpp>
 
-process_t::process_t(uint64_t id, char* cli, Executable* exec, uint64_t fmax, proc_priority_t pri, bool iskernelproc) : pid(id), cmdline(cli), executable(exec), fd_max(fmax), priority(pri), is_kernel_proc(iskernelproc) {
+process_t::process_t(uint64_t id, char* cli, executable_t* exec, uint64_t fmax, proc_priority_t pri, bool iskernelproc) : pid(id), cmdline(cli), executable(exec), fd_max(fmax), priority(pri), is_kernel_proc(iskernelproc) {
 	this->state = STARTING;
 	this->stdin = new vector<char*>();
 	this->stdout = new vector<char*>();
@@ -14,7 +14,7 @@ process_t::process_t(uint64_t id, char* cli, Executable* exec, uint64_t fmax, pr
 	//Probably shouldn't have this on the stack i'd bet
 	this->tss = new tss_t;
 	//populate tss
-	this->context = new context_t{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //Zeroing out the registers
+	this->context = new cpu_context_t{0}; //Zeroing out the registers
 }
 
 process_t::~process_t() {
@@ -115,9 +115,9 @@ tss_t* process_t::getTSS() { return this->tss; }
 
 void process_t::setTSS(tss_t* t) { this->tss = t; }
 
-void process_t::setContext(context_t* c) { this->context = c; }
+void process_t::setContext(cpu_context_t* c) { this->context = c; }
 
-context_t* process_t::getContext() { return this->context; }
+cpu_context_t* process_t::getContext() { return this->context; }
 
 vector<char*>* process_t::getStdin() { return this->stdin; }
 
@@ -125,11 +125,11 @@ vector<char*>* process_t::getStderr() { return this->stderr; }
 
 vector<char*>* process_t::getStdout() { return this->stdout; }
 
-void process_t::setExecutable(Executable* e) { this->executable = e; }
+void process_t::setExecutable(executable_t* e) { this->executable = e; }
 
 void process_t::setCmdline(char* c) { this->cmdline = c; }
 
-Executable* process_t::getExecutable() { return this->executable; }
+executable_t* process_t::getExecutable() { return this->executable; }
 
 char* process_t::getCmdline() { return this->cmdline; }
 

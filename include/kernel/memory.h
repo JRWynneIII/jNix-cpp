@@ -2,8 +2,8 @@
 #include<cstdint>
 #include<kernel/ptr.hpp>
 
-#define TO_VIRT_ADDR(a) ((uintptr_t)a | Memory::hhdm_offset)
-#define TO_PHYS_ADDR(a) ((uintptr_t)a ^ Memory::hhdm_offset)
+#define TO_VIRT_ADDR(a) ((uintptr_t)a + Memory::hhdm_offset)
+#define TO_PHYS_ADDR(a) ((uintptr_t)a - Memory::hhdm_offset)
 #define PAGE_SIZE_BYTES 4096
 
 #define SLAB_PTR_SIZE sizeof(slab_t)
@@ -155,7 +155,7 @@ struct mem_region {
 
 extern "C" uint8_t endkernel[];
 
-#include<kernel/memory/addrspace.hpp>
+class addrspace_t;
 
 namespace Memory {
 	void log_memory_info();
@@ -193,6 +193,12 @@ namespace Memory {
 		void create_page_table_entry(frame_t* frame, addrspace_t* as);
 		void map_address(uintptr_t virt_addr, uintptr_t phys_addr, bool readonly, bool executable, bool isuser, addrspace_t* as);
 		pt_entry_t* lookup_address(uintptr_t virt_addr);
+
+		uintptr_t alloc_contiguous_pages(uint64_t num, bool rw, bool noexec, bool isuser, addrspace_t* as);
+		uintptr_t alloc_contiguous_pages(uint64_t num, bool rw, bool noexec, bool isuser);
+
+		void modify_page_perms(uintptr_t virt, bool rw, bool noexec, bool isuser, addrspace_t* as);
+		void modify_page_perms(uintptr_t virt, bool rw, bool noexec, bool isuser);
 	}
 	namespace Allocation {
 		void dump_slab_list();

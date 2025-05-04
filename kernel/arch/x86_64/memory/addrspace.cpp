@@ -68,6 +68,7 @@ void addrspace_t::write_cr3(uint64_t ptr) {
 }
 
 void addrspace_t::activate() {
+	//Reloading CR3 invalidates all pages
 	this->last_cr3_value = this->read_cr3();
 	this->write_cr3(this->virt_to_phys(this->pml4->dir));
 }
@@ -91,6 +92,9 @@ uintptr_t addrspace_t::alloc_zeroed_frame() {
 	return frame;
 }
 
+extern "C" uint64_t stack_top;
+extern "C" uint64_t stack_bottom;
+
 void addrspace_t::bootstrap() {
 	uintptr_t new_tablespace = this->alloc_zeroed_frame();
 	uintptr_t new_pml4_location = new_tablespace;
@@ -104,7 +108,17 @@ void addrspace_t::bootstrap() {
 	logfk(KERNEL, "VMM: Mapping kernel pages\n");
 	this->map_kernel_region(Memory::kernel_region);
 	logfk(KERNEL, "VMM: Mapping framebuffer pages\n");
-	this->map_region(Memory::framebuffer_region, true, false, false);
+	this->map_region(Memory::framebuffer_region, true, false, true);
+	logfk(KERNEL, "VMM: Mapping kernel stack\n");
+	//TODO: convert to phys addrs
+	uintptr_t kernel_stack_page_bottom = ((uint64_t)&stack_bottom & ~0xFFF); 
+	uintptr_t kernel_stack_page_top = ((uint64_t)&stack_top & ~0xFFF); 
+
+	uintptr_t phys_kernel_stack_page_bottom = kernel_stack_page_bottom - Memory::kernel_virtual_addr_base; 
+	uintptr_t phys_kernel_stack_page_top = kernel_stack_page_top - Memory::kernel_virtual_addr_base; 
+
+	mem_region stack_region = {0, phys_kernel_stack_page_bottom, (phys_kernel_stack_page_top - phys_kernel_stack_page_bottom)};
+	this->map_kernel_region(stack_region, true);
 
 	// Map pages for the PMM bitmap
 	uintptr_t pmm_bitmap_location = Memory::PMM::bitmap_location();
@@ -151,7 +165,7 @@ void addrspace_t::map_accessible_space() {
 	}
 }
 
-void addrspace_t::map_kernel_region(mem_region region) {
+void addrspace_t::map_kernel_region(mem_region region, bool noexec=false) {
 	uintptr_t region_start = region.base;
 	uintptr_t region_end = region.base + region.length;
 	uintptr_t region_start_virt = Memory::kernel_virtual_addr_base + region_start - Memory::kernel_physical_addr_base;
@@ -160,7 +174,11 @@ void addrspace_t::map_kernel_region(mem_region region) {
 	uintptr_t cur = region_start;
 	while (cur < region_end) {
 		uintptr_t cur_virt = Memory::kernel_virtual_addr_base + cur - Memory::kernel_physical_addr_base;
-		this->map_page(cur_virt, cur, true, true, false, false, false);
+		this->map_page(cur_virt, cur, true, noexec, false, false, false);
+		if (cur_virt == 0xffffffff8001e000) {
+			auto page = this->lookup(cur_virt);
+			printfk("Page entry for interrupt: %x\n", page->as_uint64_t);
+		}
 		cur = cur + 4096;
 	}
 }
@@ -184,6 +202,20 @@ void addrspace_t::map_region(mem_region region, bool rw, bool isuserspace, bool 
 	}
 }
 
+#define ENTRY_PRESENT (1 << 0)
+#define ENTRY_RW (1 << 1)
+#define ENTRY_USER (1 << 2)
+#define ENTRY_WRITETHROUGH (1 << 3)
+#define ENTRY_DISABLECACHE (1 << 4)
+#define ENTRY_NOEXEC (1 << 63)
+
+#define MARK_PRESENT(a) a |= ENTRY_PRESENT
+#define MARK_RW(a) a |= ENTRY_RW
+#define MARK_USER(a) a |= ENTRY_USER
+#define MARK_WRITETHROUGH(a) a |= ENTRY_WRITETHROUGH
+#define MARK_DISABLECACHE(a) a |= ENTRY_DISABLECACHE
+#define MARK_NOEXEC(a) a |= ENTRY_NOEXEC
+
 void addrspace_t::map_page(pml4_dir_t* pml4, 
 		uintptr_t virt_addr, 
 		uintptr_t phys_addr, 
@@ -192,75 +224,116 @@ void addrspace_t::map_page(pml4_dir_t* pml4,
 		bool writethrough, 
 		bool disablecache, 
 		bool isuserspace) {
+	asm volatile("invlpg (%0)"::"r"(virt_addr):"memory");
 	//find offsets into each table
-	uint64_t pml4_offset = ((virt_addr >> 12) >> 27) & 0x1FF;
-	uint64_t pdp_offset = ((virt_addr >> 12) >> 18) & 0x1FF;
-	uint64_t pd_offset = ((virt_addr >> 12) >> 9) & 0x1FF;
-	uint64_t pt_offset = (virt_addr >> 12) & 0x1FF;
+	uint64_t pml4_offset = (virt_addr >> 39) & 0x1FF;
+	uint64_t pdp_offset  = (virt_addr >> 30) & 0x1FF;
+	uint64_t pd_offset   = (virt_addr >> 21) & 0x1FF;
+	uint64_t pt_offset   = (virt_addr >> 12) & 0x1FF;
 
 	//Ensure its 4k aligned
 	phys_addr &= ~0xFFF;
 
 	pml4_entry_t pml4e = pml4->dir[pml4_offset];
 	if (!pml4e.present) {
-		//Write new entry
 		uintptr_t pdp_table = this->alloc_zeroed_frame();
-		pml4_entry_t new_entry = {
-			.present = 1,
-			.rw = rw,
-			.user = 1,
-			.pdp_address = pdp_table >> 12,
-		};
+		uint64_t new_entry = pdp_table | ENTRY_PRESENT | ENTRY_RW | ENTRY_USER;
 
-		pml4->dir[pml4_offset] = new_entry;
-		pml4e = new_entry;
+		pml4->dir[pml4_offset].as_uint64_t = new_entry;
+		pml4e = pml4->dir[pml4_offset];
 	}
-
-	pdp_dir_t* pdp_dir = (pdp_dir_t*)(this->phys_to_virt(pml4e.pdp_address << 12));
+	pdp_dir_t* pdp_dir = (pdp_dir_t*)(this->phys_to_virt(pml4e.as_uint64_t & ~0xFFF));
 	pdp_entry_t pdpe = pdp_dir->dir[pdp_offset];
 	if (!pdpe.present) {
 		//Write new entry
 		uintptr_t pd_table = this->alloc_zeroed_frame();
-		pdp_entry_t new_entry = {
-			.present = 1,
-			.rw = rw,
-			.user = 1,
-			.pd_address = pd_table >> 12,
-		};
+		uint64_t new_entry = pd_table | ENTRY_PRESENT | ENTRY_RW | ENTRY_USER;
 
-		pdp_dir->dir[pdp_offset] = new_entry;
-		pdpe = new_entry;
+		pdp_dir->dir[pdp_offset].as_uint64_t = new_entry;
+		pdpe = pdp_dir->dir[pdp_offset];
 	}
-
-	pd_dir_t* pd_dir = (pd_dir_t*)(this->phys_to_virt(pdpe.pd_address << 12));
+	pd_dir_t* pd_dir = (pd_dir_t*)(this->phys_to_virt(pdpe.as_uint64_t & ~0xFFF));
 	pd_entry_t pde = pd_dir->dir[pd_offset];
 	if (!pde.present) {
 		//Write new entry
 		uintptr_t pt_table = this->alloc_zeroed_frame();
-		pd_entry_t new_entry = {
-			.present = 1,
-			.rw = rw,
-			.user = 1,
-			.pt_address = pt_table >> 12,
-		};
+		uint64_t new_entry = pt_table | ENTRY_PRESENT | ENTRY_RW | ENTRY_USER;
 
-		pd_dir->dir[pd_offset] = new_entry;
-		pde = new_entry;
+		pd_dir->dir[pd_offset].as_uint64_t = new_entry;
+		pde = pd_dir->dir[pd_offset];
 	}
 
-	pt_dir_t* pt_dir = (pt_dir_t*)(this->phys_to_virt(pde.pt_address << 12));
+	uint64_t entry = phys_addr;
+	MARK_PRESENT(entry);
+	if (rw) MARK_RW(entry);
+	if (isuserspace) MARK_USER(entry);
+	if (!notexecutable) MARK_NOEXEC(entry);
+	if (writethrough) MARK_WRITETHROUGH(entry);
+	if (disablecache) MARK_DISABLECACHE(entry);
 
-	pt_entry_t new_entry = {
-		.present = 1,
-		.rw = rw,
-		.user = isuserspace,
-		.write_through = writethrough,
-		.cache_disabled = disablecache,
-	};
+	pt_dir_t* pt_dir = (pt_dir_t*)(this->phys_to_virt(pde.as_uint64_t & ~0xFFF));
 
-	new_entry.as_uint64_t = ((phys_addr) & ~0xFFF) | new_entry.as_uint64_t;
+	pt_dir->pages[pt_offset].as_uint64_t = entry;
 
-	pt_dir->pages[pt_offset] = new_entry;
+//	if (!pml4e.present) {
+//		//Write new entry
+//		uintptr_t pdp_table = this->alloc_zeroed_frame();
+//		pml4_entry_t new_entry = {
+//			.present = 1,
+//			.rw = rw,
+//			.user = 1,
+//			.pdp_address = pdp_table >> 12,
+//		};
+//
+//		pml4->dir[pml4_offset] = new_entry;
+//		pml4e = new_entry;
+//	}
+//
+//	pdp_dir_t* pdp_dir = (pdp_dir_t*)(this->phys_to_virt(pml4e.pdp_address << 12));
+//	pdp_entry_t pdpe = pdp_dir->dir[pdp_offset];
+//	if (!pdpe.present) {
+//		//Write new entry
+//		uintptr_t pd_table = this->alloc_zeroed_frame();
+//		pdp_entry_t new_entry = {
+//			.present = 1,
+//			.rw = rw,
+//			.user = 1,
+//			.pd_address = pd_table >> 12,
+//		};
+//
+//		pdp_dir->dir[pdp_offset] = new_entry;
+//		pdpe = new_entry;
+//	}
+//
+//	pd_dir_t* pd_dir = (pd_dir_t*)(this->phys_to_virt(pdpe.pd_address << 12));
+//	pd_entry_t pde = pd_dir->dir[pd_offset];
+//	if (!pde.present) {
+//		//Write new entry
+//		uintptr_t pt_table = this->alloc_zeroed_frame();
+//		pd_entry_t new_entry = {
+//			.present = 1,
+//			.rw = rw,
+//			.user = 1,
+//			.pt_address = pt_table >> 12,
+//		};
+//
+//		pd_dir->dir[pd_offset] = new_entry;
+//		pde = new_entry;
+//	}
+//
+//	pt_dir_t* pt_dir = (pt_dir_t*)(this->phys_to_virt(pde.pt_address << 12));
+//
+//	pt_entry_t new_entry = {
+//		.present = 1,
+//		.rw = rw,
+//		.user = isuserspace,
+//		.write_through = writethrough,
+//		.cache_disabled = disablecache,
+//	};
+//	
+//	new_entry.as_uint64_t = ((phys_addr) & ~0xFFF) | new_entry.as_uint64_t;
+//
+//	pt_dir->pages[pt_offset] = new_entry;
 }
 
 void addrspace_t::map_page(uintptr_t virt_addr, 
@@ -276,29 +349,33 @@ void addrspace_t::map_page(uintptr_t virt_addr,
 void addrspace_t::unmap(uintptr_t virt_addr) {
 	pt_entry_t* pte = this->lookup(virt_addr);
 	pte->present = false;
-	//TODO: invalidate page
+	asm volatile("invlpg (%0)"::"r"(virt_addr):"memory");
 }
 
 pt_entry_t* addrspace_t::lookup(uintptr_t virt_addr) {
 	//find offsets into each table
-	uint64_t pml4_offset = ((virt_addr >> 12) >> 27) & 0x1FF;
-	uint64_t pdp_offset = ((virt_addr >> 12) >> 18) & 0x1FF;
-	uint64_t pd_offset = ((virt_addr >> 12) >> 9) & 0x1FF;
-	uint64_t pt_offset = (virt_addr >> 12) & 0x1FF;
-	uint64_t phys_offset = virt_addr & 0xFFF;
+	uint64_t pml4_offset = (virt_addr >> 39) & 0x1FF;
+	uint64_t pdp_offset  = (virt_addr >> 30) & 0x1FF;
+	uint64_t pd_offset   = (virt_addr >> 21) & 0x1FF;
+	uint64_t pt_offset   = (virt_addr >> 12) & 0x1FF;
+//	uint64_t pml4_offset = ((virt_addr >> 12) >> 27) & 0x1FF;
+//	uint64_t pdp_offset = ((virt_addr >> 12) >> 18) & 0x1FF;
+//	uint64_t pd_offset = ((virt_addr >> 12) >> 9) & 0x1FF;
+//	uint64_t pt_offset = (virt_addr >> 12) & 0x1FF;
+//	uint64_t phys_offset = virt_addr & 0xFFF;
 
 	pml4_entry_t pml4e = pml4->dir[pml4_offset];
-	if (!pml4e.present) return nullptr;
+	if (!(pml4e.as_uint64_t & ENTRY_PRESENT)) return nullptr;
 
-	pdp_dir_t* pdp_dir = (pdp_dir_t*)(this->phys_to_virt(pml4e.pdp_address << 12));
+	pdp_dir_t* pdp_dir = (pdp_dir_t*)(this->phys_to_virt(pml4e.as_uint64_t & ~0x1ff));
 	pdp_entry_t pdpe = pdp_dir->dir[pdp_offset];
-	if (!pdpe.present) return nullptr;
+	if (!(pdpe.as_uint64_t & ENTRY_PRESENT)) return nullptr;
 
-	pd_dir_t* pd_dir = (pd_dir_t*)(this->phys_to_virt(pdpe.pd_address << 12));
+	pd_dir_t* pd_dir = (pd_dir_t*)(this->phys_to_virt(pdpe.as_uint64_t & ~0x1ff));
 	pd_entry_t pde = pd_dir->dir[pd_offset];
-	if (!pde.present) return nullptr;
+	if (!(pde.as_uint64_t & ENTRY_PRESENT)) return nullptr;
 
-	pt_dir_t* pt_dir = (pt_dir_t*)(this->phys_to_virt(pde.pt_address << 12));
+	pt_dir_t* pt_dir = (pt_dir_t*)(this->phys_to_virt(pde.as_uint64_t & ~0x1ff));
 
 	return (pt_entry_t*)((uintptr_t)pt_dir->pages + pt_offset);
 }

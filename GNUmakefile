@@ -10,7 +10,7 @@ run: jnix.iso
 
 .PHONY: debug
 debug: jnix.iso
-	qemu-system-x86_64 -s -S -monitor stdio -no-shutdown -d int -no-reboot -M q35 -m 2G -cdrom jnix.iso -boot d
+	qemu-system-x86_64 -s -S -monitor stdio -no-shutdown -d int,guest_errors,cpu_reset -D debug.out -no-reboot -M q35 -m 2G -cdrom jnix.iso -boot d
 
 .PHONY: run-uefi
 run-uefi: ovmf-x64 jnix.iso
@@ -29,7 +29,7 @@ ovmf-x64:
 	cd ovmf-x64 && curl -o OVMF-X64.zip https://efi.akeo.ie/OVMF/OVMF-X64.zip && 7z x OVMF-X64.zip
 
 flanterm:
-	git clone https://github.com/mintsuki/flanterm kernel/flanterm || true
+	git clone https://codeberg.org/mintsuki/flanterm.git kernel/flanterm || true
 
 limine:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v8.x-binary --depth=1
@@ -37,8 +37,8 @@ limine:
 
 #deps: libc/libk.a flanterm libc/libc.a
 deps: flanterm
-	git clone https://github.com/osdev0/freestnd-c-hdrs.git kernel/freestanding-c || true
-	git clone https://github.com/osdev0/freestnd-cxx-hdrs.git kernel/freestanding-cxx || true
+	git clone https://codeberg.org/osdev/freestnd-c-hdrs.git kernel/freestanding-c || true
+	git clone https://codeberg.org/osdev/freestnd-cxx-hdrs.git kernel/freestanding-cxx || true
 	wget https://raw.githubusercontent.com/limine-bootloader/limine/refs/heads/v8.x-binary/limine.h -O include/
 
 #libc/libk.a:
